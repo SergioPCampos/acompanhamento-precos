@@ -185,7 +185,7 @@
         <div><label for="dataOCR">Data da compra</label><input type="date" id="dataOCR"></div>
       </div>
       <div class="scroll"><table id="tabRevisao">
-        <thead><tr><th>Usar</th><th>Produto</th><th class="num">Qtd</th><th class="num">Preço un. (R$)</th><th class="num">Total</th><th>Linha lida</th></tr></thead>
+        <thead><tr><th>Usar</th><th>Produto</th><th>Embalagem</th><th class="num">Qtd</th><th class="num">Preço un. (R$)</th><th class="num">Total</th><th>Linha lida</th></tr></thead>
         <tbody></tbody></table></div>
       <div id="conferencia" style="margin-top:10px"></div>
       <div class="row" style="margin-top:12px">
@@ -210,6 +210,7 @@
           <datalist id="produtos"></datalist></div>
         <div><label for="unidade">Unidade</label>
           <select id="unidade"><option>un</option><option>kg</option><option>g</option><option>L</option><option>ml</option><option>pct</option></select></div>
+        <div><label for="embalagem">Embalagem (para comparar)</label><input id="embalagem" placeholder="ex.: 5 kg, 2 L, 30 un"></div>
         <div><label for="qtd">Quantidade</label><input type="number" id="qtd" step="0.001" min="0.001" value="1" required></div>
         <div><label for="preco">Preço unitário (R$)</label><input type="number" id="preco" step="0.01" min="0" placeholder="0,00" required></div>
       </div>
@@ -309,6 +310,69 @@ function hoje(){
 /* ---------- cálculo ---------- */
 const total = r => (Number(r.qtd)||0) * (Number(r.preco)||0);
 
+/* ---------- preço comparável: por kg, por litro ou por unidade ----------
+   Para comparar Arroz 5kg com Arroz 2kg, Ovos c/30 com Ovos c/12, Coca 2L com 600ml,
+   o app lê o tamanho da embalagem e divide o preço por ele. */
+const semAcento = s => String(s||"").normalize("NFD").replace(/[̀-ͯ]/g, "");
+const RX_MULTI = /(\d+)\s*x\s*(\d+(?:[.,]\d+)?)\s*(kg|g|gr|ml|l|lt)(?![a-z])/gi;
+const RX_MEDIDA = /(\d+(?:[.,]\d+)?)\s*(kg|kgs|quilos?|g|gr|grs|gramas?|ml|l|lt|lts|litros?)(?![a-z])/gi;
+const RX_CONTAGEM = /\bc\s*\/\s*(\d+)\b|\bc(\d+)\b|\b(\d+)\s*(?:un|und|unid|unidades|ovos|rolos|pecas)(?![a-z])/gi;
+
+function converterMedida(n, u){
+  u = u.toLowerCase().replace(/s$/, "");
+  if(/^(kg|quilo)$/.test(u)) return [n, "kg"];
+  if(/^(g|gr|grama)$/.test(u)) return [n/1000, "kg"];
+  if(u === "ml") return [n/1000, "L"];
+  if(/^(l|lt|litro)$/.test(u)) return [n, "L"];
+  return null;
+}
+
+// "5 kg", "500g", "2L", "350 ml", "6x350ml", "c/30", "30 un", "dúzia" → {n, base}
+function lerEmbalagem(txt){
+  const s = semAcento(txt).toLowerCase().replace(/(\d),(\d)/g, "$1.$2");
+  if(!s.trim()) return null;
+  let m = [...s.matchAll(RX_MULTI)].pop();
+  if(m){ const c = converterMedida(parseFloat(m[2]), m[3]); if(c) return { n: +m[1]*c[0], base: c[1] }; }
+  m = [...s.matchAll(RX_MEDIDA)].pop();
+  if(m){ const c = converterMedida(parseFloat(m[1]), m[2]); if(c && c[0] > 0) return { n: c[0], base: c[1] }; }
+  if(/\b(duzia|dz)\b/.test(s)) return { n: 12, base: "un" };
+  m = [...s.matchAll(RX_CONTAGEM)].pop();
+  const q = m ? +(m[1] || m[2] || m[3]) : 0;
+  if(q > 1) return { n: q, base: "un" };
+  return null;
+}
+
+function textoEmbalagem(e){
+  if(!e) return "";
+  if(e.base === "kg" && e.n < 1) return num(e.n*1000) + " g";
+  if(e.base === "L" && e.n < 1) return num(e.n*1000) + " ml";
+  return num(e.n) + " " + e.base;
+}
+
+// Embalagem do registro. Vendido a peso (kg/g/L/ml) o preço já é por medida.
+function embalagemDe(r){
+  const u = String(r.unidade || "un").toLowerCase();
+  if(u === "kg") return { n: 1, base: "kg", aPeso: true };
+  if(u === "g")  return { n: 0.001, base: "kg", aPeso: true };
+  if(u === "l")  return { n: 1, base: "L", aPeso: true };
+  if(u === "ml") return { n: 0.001, base: "L", aPeso: true };
+  return lerEmbalagem(r.embalagem) || lerEmbalagem(r.produto);
+}
+// Preço na base de comparação (R$/kg, R$/L ou R$/un); sem embalagem, o próprio preço.
+function precoBase(r){ const e = embalagemDe(r); return e ? (Number(r.preco)||0) / e.n : (Number(r.preco)||0); }
+const rotuloBase = r => { const e = embalagemDe(r); return e ? "/" + e.base : ""; };
+
+// Nome do produto sem o tamanho, para juntar "Arroz Tio João 5kg" e "Arroz Tio João 2kg".
+function semTamanho(p){
+  return String(p||"").replace(RX_MULTI, " ").replace(RX_MEDIDA, " ").replace(RX_CONTAGEM, " ")
+    .replace(/\b(d[uú]zia|dz)\b/gi, " ").replace(/\s+/g, " ").trim();
+}
+function nomeBase(p){
+  return semAcento(semTamanho(p)).toLowerCase()
+    .replace(/\b(pet|pct|pc|cx|tp|sc|lata|garrafa|un|und|kg)\b/g, " ")
+    .replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+}
+
 function resumo(){
   const geral = dados.reduce((s,r)=>s+total(r),0);
   const meses = new Set(dados.map(r=>(r.data||"").slice(0,7)).filter(Boolean));
@@ -347,23 +411,30 @@ function render(){
   renderMelhor(); renderMercado(); renderMes(); renderHist(); renderListas();
 }
 
+// Compara sempre na mesma base: embalagens de tamanhos diferentes do mesmo produto
+// ficam juntas e o preço é mostrado por kg, por litro ou por unidade.
 function renderMelhor(){
   const corpo = $("tabMelhor").tBodies[0], linhas = [];
-  const mapa = agrupar(r => r.produto.trim().toLowerCase() + "|" + (r.unidade||"un"));
+  const mapa = agrupar(r => { const e = embalagemDe(r);
+    return (nomeBase(r.produto) || r.produto.trim().toLowerCase()) + "|" + (e ? e.base : "emb:" + (r.unidade||"un")); });
   const chaves = [...mapa.keys()].sort((a,b)=>a.localeCompare(b,"pt-BR"));
   for(const k of chaves){
     const itens = mapa.get(k);
-    const precos = itens.map(r=>Number(r.preco)||0);
+    const precos = itens.map(precoBase);
     const min = Math.min(...precos), max = Math.max(...precos);
     const media = precos.reduce((a,b)=>a+b,0)/precos.length;
     const melhor = itens[precos.indexOf(min)];
     const dif = min>0 ? (max-min)/min*100 : 0;
+    const e = embalagemDe(melhor), base = e ? "/" + e.base : "";
+    const variasEmb = new Set(itens.map(r => textoEmbalagem(embalagemDe(r)))).size > 1;
+    const nome = e && !e.aPeso && variasEmb ? (semTamanho(melhor.produto) || melhor.produto) : melhor.produto;
+    const detalhe = e && !e.aPeso ? `<br><span class="muted" style="font-size:.8em;font-weight:400">embalagem ${textoEmbalagem(e)} por ${brl(melhor.preco)}</span>` : "";
     linhas.push(`<tr>
-      <td>${esc(melhor.produto)} <span class="pill">${esc(melhor.unidade||"un")}</span></td>
-      <td class="down"><strong>${brl(min)}</strong></td>
+      <td>${esc(nome)} <span class="pill">${e ? "por " + e.base : esc(melhor.unidade||"un")}</span></td>
+      <td class="down"><span><strong>${brl(min)}${base}</strong>${detalhe}</span></td>
       <td><span>${esc(melhor.mercado)} <span class="muted" style="white-space:nowrap">· ${dataBR(melhor.data)}</span></span></td>
-      <td class="num">${brl(media)}</td>
-      <td class="num">${brl(max)}</td>
+      <td class="num">${brl(media)}${base}</td>
+      <td class="num">${brl(max)}${base}</td>
       <td class="num ${dif>0?"up":""}">${dif>0?pct(dif):"—"}</td>
       <td class="num">${itens.length}</td></tr>`);
   }
@@ -427,7 +498,8 @@ function renderHist(){
         <td>${esc(r.produto)} <span class="pill">${esc(r.unidade||"un")}</span></td>
         <td>${esc(r.mercado)}</td>
         <td class="num">${num(r.qtd)}</td>
-        <td class="num">${brl(r.preco)}</td>
+        <td class="num"><span>${brl(r.preco)}${(() => { const e = embalagemDe(r);
+          return e && !e.aPeso ? `<br><span class="muted" style="font-size:.8em">${brl(precoBase(r))}/${e.base}</span>` : ""; })()}</span></td>
         <td class="num"><strong>${brl(total(r))}</strong></td>
         <td class="no-print"><button class="danger" onclick="remover(${i})">✕</button></td></tr>`);
     });
@@ -479,17 +551,34 @@ $("form").addEventListener("submit", e => {
     qtd: Number($("qtd").value),
     preco: Number($("preco").value)
   };
+  if($("embalagem").value.trim()) r.embalagem = $("embalagem").value.trim();
   if(!r.produto || !r.mercado || !(r.qtd>0) || !(r.preco>=0)){
     alert("Preencha produto, mercado, quantidade e preço."); return;
   }
   dados.push(r); salvar(); render();
-  $("produto").value = ""; $("qtd").value = "1"; $("preco").value = "";
+  $("produto").value = ""; $("embalagem").value = ""; $("qtd").value = "1"; $("preco").value = "";
   atualizarPrevia(); $("produto").focus();
 });
 
-function atualizarPrevia(){
-  $("previa").textContent = "Total: " + brl((Number($("qtd").value)||0)*(Number($("preco").value)||0));
+function registroDoForm(){
+  return { produto: $("produto").value, unidade: $("unidade").value, embalagem: $("embalagem").value,
+           qtd: Number($("qtd").value)||0, preco: Number($("preco").value)||0 };
 }
+function atualizarPrevia(){
+  const r = registroDoForm(), e = embalagemDe(r);
+  $("previa").textContent = "Total: " + brl(r.qtd*r.preco) +
+    (e && !e.aPeso && r.preco > 0 ? ` · ${brl(precoBase(r))}/${e.base}` : "");
+}
+// ao digitar o produto, preenche a embalagem lida no nome ("Arroz 5kg" → "5 kg")
+$("produto").addEventListener("input", () => {
+  const emb = $("embalagem");
+  if(!emb.value || emb.dataset.auto === "1"){
+    emb.value = textoEmbalagem(lerEmbalagem($("produto").value)); emb.dataset.auto = "1";
+  }
+  atualizarPrevia();
+});
+$("embalagem").addEventListener("input", () => { $("embalagem").dataset.auto = ""; atualizarPrevia(); });
+$("unidade").addEventListener("change", atualizarPrevia);
 $("qtd").addEventListener("input", atualizarPrevia);
 $("preco").addEventListener("input", atualizarPrevia);
 $("busca").addEventListener("input", renderHist);
@@ -511,11 +600,13 @@ function campoCSV(v){
 }
 function exportarCSV(){
   if(!dados.length){ alert("Não há registros para exportar."); return; }
-  const linhas = [["Data","Produto","Unidade","Mercado","Quantidade","PrecoUnitario","Total"]
+  const linhas = [["Data","Produto","Unidade","Mercado","Quantidade","PrecoUnitario","Total","Embalagem","PrecoComparavel","Base","Cupom"]
     .join(";")];
   for(const r of dados){
+    const e = embalagemDe(r);
     linhas.push([r.data,r.produto,r.unidade||"un",r.mercado,r.qtd,
-      Number(r.preco).toFixed(2), total(r).toFixed(2)].map(campoCSV).join(";"));
+      Number(r.preco).toFixed(2), total(r).toFixed(2), r.embalagem || "",
+      precoBase(r).toFixed(2), e ? e.base : "", r.cupom || ""].map(campoCSV).join(";"));
   }
   const blob = new Blob(["﻿"+linhas.join("\r\n")], {type:"text/csv;charset=utf-8"});
   const a = document.createElement("a");
@@ -546,7 +637,8 @@ function lerCSV(texto){
   const cab = dividir(linhas[0],sep).map(c=>c.trim().toLowerCase());
   const idx = n => cab.findIndex(c => c.startsWith(n));
   const iD=idx("data"), iP=idx("produto"), iU=idx("unidade"),
-        iM=idx("mercado"), iQ=idx("quant"), iV=idx("preco");
+        iM=idx("mercado"), iQ=idx("quant"), iV=idx("precounit") >= 0 ? idx("precounit") : idx("preco"),
+        iE=idx("embal"), iC=idx("cupom");
   if(iP<0 || iV<0) throw new Error("faltam as colunas Produto e PrecoUnitario.");
   const saida = [];
   for(let i=1;i<linhas.length;i++){
@@ -554,14 +646,17 @@ function lerCSV(texto){
     const produto = (c[iP]||"").trim();
     const preco = numeroBR(c[iV]);
     if(!produto || !isFinite(preco)) continue;
-    saida.push({
+    const r = {
       data: normData(iD>=0?c[iD]:""),
       produto,
       unidade: (iU>=0 && c[iU]?.trim()) || "un",
       mercado: (iM>=0 && c[iM]?.trim()) || "Não informado",
       qtd: iQ>=0 ? (numeroBR(c[iQ])||1) : 1,
       preco
-    });
+    };
+    if(iE>=0 && c[iE]?.trim()) r.embalagem = c[iE].trim();
+    if(iC>=0 && /^\d{44}$/.test((c[iC]||"").trim())) r.cupom = c[iC].trim();
+    saida.push(r);
   }
   return saida;
 }
@@ -1163,13 +1258,25 @@ function conferir(){
   el.innerHTML += notaDesc;
 }
 
+// Total da linha e, quando há embalagem, o preço por kg/L/un para conferir.
+function totalRevisao(it){
+  const e = embalagemDe(it);
+  const base = e && !e.aPeso && it.preco > 0 ? `<br><span class="muted" style="font-size:.8em">${brl(precoBase(it))}/${e.base}</span>` : "";
+  return `<span>${brl((Number(it.qtd)||0)*(Number(it.preco)||0))}${base}</span>`;
+}
+
 function renderRevisao(){
+  // embalagem lida no nome do produto (o usuário pode corrigir, ex.: "30 un")
+  for(const it of itensLidos)
+    if(it.embalagem === undefined){ const e = embalagemDe({...it, embalagem: ""}); it.embalagem = e && !e.aPeso ? textoEmbalagem(e) : ""; }
   $("tabRevisao").tBodies[0].innerHTML = itensLidos.map((it,i)=>`<tr>
     <td><input type="checkbox" data-i="${i}" class="usar" ${it.ignorar?"":"checked"} style="width:auto"></td>
     <td><input class="ed" data-i="${i}" data-c="produto" value="${esc(it.produto)}"></td>
+    <td>${String(it.unidade).toLowerCase() === "kg" ? '<span class="muted">vendido por kg</span>'
+         : `<input class="ed" data-i="${i}" data-c="embalagem" value="${esc(it.embalagem)}" placeholder="ex.: 5 kg, 2 L, 30 un">`}</td>
     <td><input class="ed" data-i="${i}" data-c="qtd" type="number" step="0.001" min="0.001" value="${it.qtd}"></td>
     <td><input class="ed" data-i="${i}" data-c="preco" type="number" step="0.01" min="0" value="${Number(it.preco).toFixed(2)}"></td>
-    <td class="num">${brl(it.qtd*it.preco)}</td>
+    <td class="num">${totalRevisao(it)}</td>
     <td style="font-size:12px" class="muted">${esc(it.linha||"")}
       ${it.aviso?`<br><span class="pill" style="color:var(--warn);border-color:var(--warn)">⚠ ${esc(it.aviso)}</span>`:""}</td></tr>`).join("");
   rotular($("tabRevisao"));
@@ -1178,11 +1285,9 @@ function renderRevisao(){
   $("tabRevisao").querySelectorAll(".ed").forEach(inp => {
     inp.addEventListener("input", () => {
       const it = itensLidos[Number(inp.dataset.i)], c = inp.dataset.c;
-      it[c] = c === "produto" ? inp.value : Number(inp.value);
-      if(c !== "produto"){
-        inp.closest("tr").cells[4].textContent = brl((Number(it.qtd)||0)*(Number(it.preco)||0));
-      }
-      conferir();
+      it[c] = c === "produto" || c === "embalagem" ? inp.value : Number(inp.value);
+      inp.closest("tr").cells[5].innerHTML = totalRevisao(it);
+      if(c !== "produto" && c !== "embalagem") conferir();
     });
   });
   $("tabRevisao").querySelectorAll(".usar").forEach(chk => {
@@ -1211,6 +1316,7 @@ $("btnConfirmar").addEventListener("click", () => {
     const r = { data, mercado, produto: it.produto.trim(),
                 unidade: it.unidade || "un", qtd: Number(it.qtd), preco: Number(it.preco) };
     if(chaveCupom) r.cupom = chaveCupom;      // chave de acesso da NFC-e: evita importar o mesmo cupom 2 vezes
+    if(it.embalagem && it.embalagem.trim()) r.embalagem = it.embalagem.trim();
     dados.push(r);
   }
   salvar(); render();

@@ -1,7 +1,7 @@
 /* Service worker: guarda o app e o motor de OCR no aparelho para funcionar sem internet.
    Páginas: busca a versão nova primeiro (rede) e usa a guardada se estiver offline.
    Motor de OCR e ícones: usa a cópia guardada (não mudam). */
-const VERSAO = "precos-v9";
+const VERSAO = "precos-v10";
 const ARQUIVOS = [
   "./", "index.html", "manual.html", "guia_rapido.html", "manifest.json",
   "icones/icone-192.png", "icones/icone-512.png", "icones/icone-maskable-512.png", "icones/apple-touch-icon.png",
