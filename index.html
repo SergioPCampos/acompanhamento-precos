@@ -94,10 +94,23 @@
   </div>
 </section>
 
+<div id="leitorQR" style="display:none;position:fixed;inset:0;z-index:50;background:#000;color:#fff">
+  <video id="qrVideo" playsinline muted style="width:100%;height:100%;object-fit:cover"></video>
+  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
+    <div style="width:min(70vw,320px);aspect-ratio:1;border:3px solid #fff;border-radius:16px;box-shadow:0 0 0 9999px rgba(0,0,0,.45)"></div>
+  </div>
+  <div style="position:absolute;left:0;right:0;top:0;padding:16px;text-align:center;font-size:1rem;background:linear-gradient(#000a,#0000)">
+    Aponte para o <strong>QR Code</strong> no rodapé do cupom
+  </div>
+  <div style="position:absolute;left:0;right:0;bottom:24px;text-align:center">
+    <button type="button" id="btnFecharQR" style="background:#fff;color:#000;border-color:#fff">Cancelar</button>
+  </div>
+</div>
+
 <header><div class="wrap">
   <h1>🛒 Acompanhamento de Preços</h1>
   <p>Registro e comparação de preços de supermercado, 100% offline.
-    · <a href="manual.html" style="color:#fff">📖 Como usar</a>
+    · <a href="guia_rapido.html" style="color:#fff">📖 Como usar</a>
     <span id="licenciadoPara"></span></p>
 </div></header>
 
@@ -105,14 +118,36 @@
 
 
   <div class="card no-print">
-    <h2>📷 Importar por imagem (OCR offline)</h2>
-    <p class="muted" style="margin-top:-6px">Leitura feita no seu computador pelo motor Tesseract (WebAssembly).
-    Sem internet, sem IA na nuvem, sem tokens.</p>
+    <h2>🧾 Importar cupom fiscal</h2>
+
+    <h3 style="font-size:.98rem;margin:4px 0 6px">✅ Pelo QR Code <span class="pill">recomendado: sem erros</span></h3>
+    <ol class="muted" style="margin:0 0 10px;padding-left:20px;font-size:.9rem">
+      <li>Toque em <strong>Ler QR Code</strong> e aponte para o QR Code no rodapé do cupom.</li>
+      <li>Toque em <strong>Abrir nota</strong> e passe pela verificação de segurança do site da Receita.</li>
+      <li>Segure o dedo no texto → <strong>Selecionar tudo</strong> → <strong>Copiar</strong>. Feche a página e toque em <strong>Colar cupom</strong>.</li>
+    </ol>
+    <div class="row">
+      <button type="button" id="btnQR">📷 Ler QR Code</button>
+      <button type="button" class="ghost" id="btnColar">📋 Colar cupom</button>
+      <button type="button" class="ghost" id="btnMostrarColar">Colar à mão</button>
+    </div>
+    <div id="qrAberto" class="note" style="display:none;margin-top:10px;background:var(--brand-soft);color:var(--brand)">
+      <div id="qrMsg"></div>
+      <div class="row" style="margin-top:8px">
+        <a id="qrLink" target="_blank" rel="noopener noreferrer"><button type="button">🌐 Abrir nota no site da Receita</button></a>
+      </div>
+      <div class="muted" id="qrDominio" style="font-size:.8rem;margin-top:6px"></div>
+    </div>
+    <div id="caixaColar" style="display:none;margin-top:10px">
+      <textarea id="textoColado" placeholder="Cole aqui o texto copiado da página da nota (NFC-e)"
+        style="width:100%;min-height:110px;padding:9px 10px;border:1px solid var(--line);border-radius:7px;font:13px ui-monospace,Consolas,monospace"></textarea>
+      <div class="row" style="margin-top:8px"><button type="button" id="btnLerColado">Ler texto colado</button></div>
+    </div>
+
+    <h3 style="font-size:.98rem;margin:18px 0 6px">📷 Pela foto <span class="pill">sem internet, precisa revisar</span></h3>
     <div id="avisoProtocolo" class="note" style="display:none;margin-bottom:12px"></div>
     <div class="grid">
-      <div><label for="foto">Foto do talão ou etiqueta</label><input type="file" id="foto" accept="image/*"></div>
-      <div><label for="mercadoOCR">Mercado destes itens</label><input id="mercadoOCR" list="mercados" placeholder="Nome do mercado"></div>
-      <div><label for="dataOCR">Data destes itens</label><input type="date" id="dataOCR"></div>
+      <div><label for="foto">Foto do cupom</label><input type="file" id="foto" accept="image/*"></div>
     </div>
     <div class="row" style="margin-top:12px">
       <button type="button" id="btnLer" disabled>Ler imagem</button>
@@ -125,8 +160,12 @@
     <canvas id="tela" style="display:none;max-width:100%;margin-top:12px;border:1px solid var(--line);border-radius:8px"></canvas>
 
     <div id="revisao" style="display:none;margin-top:16px">
-      <h2>Revisar itens detetados</h2>
-      <p class="muted" style="margin-top:-6px">Corrija o que o OCR leu mal, desmarque o que não quer e confirme.</p>
+      <h2>Revisar itens do cupom</h2>
+      <p class="muted" style="margin-top:-6px" id="dicaRevisao">Corrija o que foi lido errado, desmarque o que não quer e confirme.</p>
+      <div class="grid" style="margin-bottom:10px">
+        <div><label for="mercadoOCR">Mercado</label><input id="mercadoOCR" list="mercados" placeholder="Nome do mercado"></div>
+        <div><label for="dataOCR">Data da compra</label><input type="date" id="dataOCR"></div>
+      </div>
       <div class="scroll"><table id="tabRevisao">
         <thead><tr><th>Usar</th><th>Produto</th><th class="num">Qtd</th><th class="num">Preço un. (R$)</th><th class="num">Total</th><th>Linha lida</th></tr></thead>
         <tbody></tbody></table></div>
@@ -530,6 +569,7 @@ const OCR = {
   langPath:   "vendor/tesseract/lang"
 };
 let imagemOrig = null, rotacao = 0, itensLidos = [], totalTalao = null;
+let chaveCupom = null, descontoTalao = 0;   // só no cupom colado da NFC-e
 
 if(location.protocol === "file:"){
   const av = $("avisoProtocolo");
@@ -558,35 +598,100 @@ $("foto").addEventListener("change", ev => {
 
 $("btnGirar").addEventListener("click", () => { rotacao = (rotacao + 90) % 360; desenhar(); });
 
-/* Pré-processamento: escala, tons de cinza e aumento de contraste.
-   Melhora bastante a leitura de talões impressos em papel térmico. */
+/* Pré-processamento da foto (testado com fotos reais de cupom térmico):
+   1. recorta o papel, tirando o fundo (mesa, mão), com margem para não cortar a coluna de valores;
+   2. amplia para ~2400 px no lado maior;
+   3. uniformiza o fundo: divide cada ponto pela média da vizinhança, o que apaga
+      sombras e dobras e escurece a impressão fraca;
+   4. endireita a foto se estiver inclinada. */
 function desenhar(){
-  const tela = $("tela"), ctx = tela.getContext("2d");
-  const w = imagemOrig.naturalWidth, h = imagemOrig.naturalHeight;
-  const escala = Math.min(2, Math.max(1, 1600 / Math.max(w, h)));
-  const vertical = rotacao % 180 === 0;
-  tela.width  = Math.round((vertical ? w : h) * escala);
-  tela.height = Math.round((vertical ? h : w) * escala);
-  ctx.save();
-  ctx.translate(tela.width/2, tela.height/2);
-  ctx.rotate(rotacao * Math.PI / 180);
-  ctx.drawImage(imagemOrig, -w*escala/2, -h*escala/2, w*escala, h*escala);
-  ctx.restore();
+  const tela = $("tela"), ctx = tela.getContext("2d", {willReadFrequently:true});
+  const W0 = imagemOrig.naturalWidth, H0 = imagemOrig.naturalHeight, deitada = rotacao % 180 !== 0;
+  const base = document.createElement("canvas");
+  base.width = deitada ? H0 : W0; base.height = deitada ? W0 : H0;
+  const bc = base.getContext("2d", {willReadFrequently:true});
+  bc.translate(base.width/2, base.height/2); bc.rotate(rotacao*Math.PI/180); bc.drawImage(imagemOrig, -W0/2, -H0/2);
 
-  const dados = ctx.getImageData(0,0,tela.width,tela.height);
-  const p = dados.data;
-  let soma = 0;
-  for(let i=0;i<p.length;i+=4){
-    const g = 0.299*p[i] + 0.587*p[i+1] + 0.114*p[i+2];
-    p[i]=p[i+1]=p[i+2]=g; soma += g;
+  const [rx, ry, rw, rh] = areaDoPapel(base);
+  const esc = Math.min(3, 2400 / Math.max(rw, rh));
+  tela.width = Math.round(rw*esc); tela.height = Math.round(rh*esc);
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(base, rx, ry, rw, rh, 0, 0, tela.width, tela.height);
+  uniformizarFundo(ctx, tela.width, tela.height);
+
+  const ang = anguloInclinacao(ctx, tela.width, tela.height);
+  if(Math.abs(ang) >= 0.5){
+    const copia = document.createElement("canvas"); copia.width = tela.width; copia.height = tela.height;
+    copia.getContext("2d").drawImage(tela, 0, 0);
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, tela.width, tela.height);
+    ctx.save(); ctx.translate(tela.width/2, tela.height/2); ctx.rotate(ang*Math.PI/180);
+    ctx.drawImage(copia, -tela.width/2, -tela.height/2); ctx.restore();
   }
-  const media = soma / (p.length/4);
-  const ganho = 1.6;
-  for(let i=0;i<p.length;i+=4){
-    const v = Math.max(0, Math.min(255, (p[i]-media)*ganho + media));
-    p[i]=p[i+1]=p[i+2]=v;
+}
+
+// Retângulo do papel: pontos claros e pouco coloridos. Se não achar, usa a foto inteira.
+function areaDoPapel(cv){
+  const W = cv.width, H = cv.height, sc = 400/Math.max(W,H), w = Math.round(W*sc), h = Math.round(H*sc);
+  const pc = document.createElement("canvas"); pc.width = w; pc.height = h;
+  const x = pc.getContext("2d", {willReadFrequently:true}); x.drawImage(cv, 0, 0, w, h);
+  const d = x.getImageData(0, 0, w, h).data, papel = new Uint8Array(w*h);
+  for(let i=0;i<w*h;i++){
+    const mx = Math.max(d[i*4],d[i*4+1],d[i*4+2]), mn = Math.min(d[i*4],d[i*4+1],d[i*4+2]);
+    papel[i] = mx > 120 && mx-mn < 45 ? 1 : 0;
   }
-  ctx.putImageData(dados,0,0);
+  const lin = y => { let s=0; for(let i=0;i<w;i++) s+=papel[y*w+i]; return s/w; };
+  const col = c => { let s=0; for(let i=0;i<h;i++) s+=papel[i*w+c]; return s/h; };
+  let y1=0, y2=h-1, x1=0, x2=w-1;
+  while(y1<h-1 && lin(y1)<0.08) y1++; while(y2>y1 && lin(y2)<0.08) y2--;
+  while(x1<w-1 && col(x1)<0.08) x1++; while(x2>x1 && col(x2)<0.08) x2--;
+  const mg = Math.round(w*0.02);
+  x1 = Math.max(0,x1-mg); x2 = Math.min(w-1,x2+mg); y1 = Math.max(0,y1-mg); y2 = Math.min(h-1,y2+mg);
+  if((x2-x1)*(y2-y1) < w*h*0.2) return [0, 0, W, H];
+  return [x1/sc, y1/sc, (x2-x1+1)/sc, (y2-y1+1)/sc];
+}
+
+function uniformizarFundo(ctx, w, h){
+  const id = ctx.getImageData(0, 0, w, h), p = id.data, n = w*h;
+  let g = new Float32Array(n);
+  for(let i=0;i<n;i++) g[i] = 0.299*p[i*4] + 0.587*p[i*4+1] + 0.114*p[i*4+2];
+  const integral = a => {
+    const I = new Float64Array((w+1)*(h+1));
+    for(let y=0;y<h;y++){ let s=0; for(let x=0;x<w;x++){ s+=a[y*w+x]; I[(y+1)*(w+1)+x+1] = I[y*(w+1)+x+1] + s; } }
+    return I;
+  };
+  const media = (I, x, y, r) => {
+    const xa=Math.max(0,x-r), xb=Math.min(w-1,x+r), ya=Math.max(0,y-r), yb=Math.min(h-1,y+r);
+    return (I[(yb+1)*(w+1)+xb+1] - I[ya*(w+1)+xb+1] - I[(yb+1)*(w+1)+xa] + I[ya*(w+1)+xa]) / ((xb-xa+1)*(yb-ya+1));
+  };
+  let I = integral(g);                                   // leve desfoque: une os pontinhos da impressora térmica
+  const suave = new Float32Array(n);
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++) suave[y*w+x] = media(I, x, y, 1);
+  g = suave; I = integral(g);
+  const r = Math.round(Math.max(w,h)/30);
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){
+    const v = 255 * Math.pow(Math.min(1, g[y*w+x] / Math.max(1, media(I, x, y, r))), 2);
+    const i = (y*w+x)*4; p[i] = p[i+1] = p[i+2] = v; p[i+3] = 255;
+  }
+  ctx.putImageData(id, 0, 0);
+}
+
+// Inclinação (graus) que deixa as linhas de texto mais "horizontais".
+function anguloInclinacao(ctx, w, h){
+  const ds = 4, sw = Math.floor(w/ds), sh = Math.floor(h/ds);
+  const d = ctx.getImageData(0, 0, w, h).data, escuros = [];
+  for(let y=0;y<sh;y++) for(let x=0;x<sw;x++) if(d[((y*ds)*w + x*ds)*4] < 110) escuros.push(x, y);
+  let melhor = 0, melhorV = -1;
+  for(let a=-8; a<=8; a+=0.5){
+    const rad = a*Math.PI/180, cs = Math.cos(rad), sn = Math.sin(rad), linhas = new Float64Array(sh*2);
+    for(let i=0;i<escuros.length;i+=2){
+      const yy = Math.round(escuros[i]*sn + escuros[i+1]*cs + sh/2);
+      if(yy >= 0 && yy < linhas.length) linhas[yy]++;
+    }
+    let m = 0; for(const v of linhas) m += v; m /= linhas.length;
+    let v2 = 0; for(const v of linhas) v2 += (v-m)*(v-m);
+    if(v2 > melhorV){ melhorV = v2; melhor = a; }
+  }
+  return -melhor;
 }
 
 $("btnLer").addEventListener("click", async () => {
@@ -612,14 +717,33 @@ $("btnLer").addEventListener("click", async () => {
         if(rot) $("estadoOCR").textContent = rot + "…";
       }
     });
-    await worker.setParameters({ preserve_interword_spaces: "1" });
-    const { data } = await worker.recognize($("tela"));
-    $("textoBruto").textContent = data.text;
-    itensLidos = interpretar(data.text);
-    const cab = cabecalho(data.text);
+    // PSM 6 = bloco único de texto: funciona melhor que a detecção automática em fotos de cupom
+    await worker.setParameters({ preserve_interword_spaces: "1", tessedit_pageseg_mode: "6" });
+    const tela = $("tela");
+    const leitura1 = (await worker.recognize(tela, {}, {text:true, blocks:true})).data;
+    // 2ª leitura: só a coluna de valores, aceitando apenas dígitos e UN/KG. Os números
+    // saem bem mais certos assim; os nomes vêm da 1ª leitura.
+    $("estadoOCR").textContent = "a conferir os valores…";
+    const x0 = Math.round(tela.width * 0.55);
+    const coluna = document.createElement("canvas"); coluna.width = tela.width - x0; coluna.height = tela.height;
+    coluna.getContext("2d").drawImage(tela, x0, 0, coluna.width, coluna.height, 0, 0, coluna.width, coluna.height);
+    await worker.setParameters({ tessedit_char_whitelist: "0123456789,.-UNKG " });
+    const leitura2 = (await worker.recognize(coluna, {}, {text:true, blocks:true})).data;
+    const texto = juntarLeituras(leitura1, leitura2, x0);
+    $("textoBruto").textContent = texto;
+    itensLidos = interpretar(texto);
+    const cab = cabecalho(texto, leitura1.text);
     if(cab.data) $("dataOCR").value = cab.data;
-    if(cab.mercado) $("mercadoOCR").value = cab.mercado;
-    totalTalao = isFinite(cab.total) ? cab.total : null;
+    if(cab.mercado) $("mercadoOCR").value = sugerirMercado(cab.mercado);
+    chaveCupom = null; descontoTalao = 0;
+    $("dicaRevisao").textContent = "Leitura pela foto: confira principalmente os preços, desmarque o que não quer e confirme.";
+    // entre os candidatos a total, fica o que fecha com a soma dos itens
+    // (o total nunca é menor que o maior item: isso descarta leituras absurdas)
+    const maiorItem = Math.max(0, ...itensLidos.map(it => it.qtd*it.preco));
+    const candidatos = cab.totais.filter(t => t >= maiorItem - 0.01);
+    totalTalao = null;
+    for(const t of candidatos) if(fecharComTotal(itensLidos, t)){ totalTalao = t; break; }
+    if(totalTalao == null && candidatos.length) totalTalao = candidatos[0];
     renderRevisao();
     $("estadoOCR").textContent = itensLidos.length
       ? itensLidos.length + " item(ns) detetado(s). Revise antes de importar."
@@ -638,20 +762,210 @@ $("btnLer").addEventListener("click", async () => {
 /* ---------- interpretação do texto do talão (regras, não IA) ---------- */
 // Linhas com valor que NÃO são item. Ficaram de fora palavras que aparecem em
 // nomes de produto ("caixa", "chave", "item"…), que descartavam itens válidos.
-const RUIDO = /\b(total|subtotal|sub-total|troco|dinheiro|cart[aã]o|d[eé]bito|cr[eé]dito|pix|desconto|acr[eé]scimo|tributos?|lei|cnpj|cpf|cupom|fiscal|sat|nfc|consumidor|operador|qtd\.? total|valor pago|obrigad|volte sempre|raz[aã]o social|rua|avenida|av(?=\.)|bairro|cep)\b/i;
+const RUIDO = /\b(total|subtotal|sub-total|troco|dinheiro|cart[aã]o|d[eé]bito|cr[eé]dito|pix|desconto|acr[eé]scimo|tributos?|trib|lei|cnpj|cpf|cupom|fiscal|sat|nfc|consumidor|operador|qtd\.? total|valor pago|obrigad|volte sempre|raz[aã]o social|rua|avenida|av(?=\.)|bairro|cep)\b/i;
 // No cabeçalho (nome do mercado) também se ignoram linhas de caixa, endereço, etc.
 const RUIDO_CAB = /\b(caixa|item|itens|chave|acesso|insc|end|tel|documento|auxiliar|eletr[oô]nic)/i;
 const MOEDA = /(\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2}|\d+\.\d{2})/g;
 const TEM_MOEDA = /(\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2}|\d+\.\d{2})/;   // sem /g: seguro para .test()
 const UNIDADES = "un|und|kg|g|l|lt|ml|pc|pct|cx";
 
-function interpretar(texto){
+const r2 = v => Math.round(v*100)/100;
+const letras = s => s.replace(/[^A-Za-zÀ-ÿ]/g,"").length;
+
+/* Junta as duas leituras: palavras da 1ª (nomes) + números da 2ª (coluna de valores),
+   casando as linhas pela altura em que aparecem na foto. */
+function juntarLeituras(d1, d2, x0){
+  const l1 = d1.lines || [], l2 = (d2.lines || []).map(l => ({...l, usada:false}));
   const saida = [];
-  for(const bruta of texto.split(/\r?\n/)){
-    const linha = bruta.replace(/\s+/g," ").trim();
-    if(linha.length < 5 || RUIDO.test(linha)) continue;
+  for(const a of l1){
+    const ha = a.bbox.y1 - a.bbox.y0;
+    let melhor = null, mo = 0;
+    for(const b of l2){
+      if(b.usada) continue;
+      const ov = Math.min(a.bbox.y1, b.bbox.y1) - Math.max(a.bbox.y0, b.bbox.y0);
+      const r = ov / Math.max(1, Math.min(ha, b.bbox.y1 - b.bbox.y0));
+      if(r > mo){ mo = r; melhor = b; }
+    }
+    const numCol = melhor && mo >= 0.4
+      ? melhor.text.trim().split(/\s+/).filter(t => /\d/.test(t) || /^[1I]?(UN|KG)$/i.test(t)).join(" ") : "";
+    if(numCol){
+      melhor.usada = true;
+      const esquerda = (a.words || [])
+        .filter(w => w.bbox.x1 < x0 + 10 || (letras(w.text) >= 3 && !/\d/.test(w.text)))
+        .map(w => w.text).join(" ");
+      saida.push({ y: a.bbox.y0, t: esquerda + "   " + numCol });
+    }else{
+      saida.push({ y: a.bbox.y0, t: a.text.trim() });
+    }
+  }
+  for(const b of l2) if(!b.usada){
+    const t = b.text.trim().split(/\s+/).filter(t => /\d/.test(t)).join(" ");
+    if(TEM_MOEDA.test(t)) saida.push({ y: b.bbox.y0, t });
+  }
+  return saida.sort((a,b) => a.y - b.y).map(s => s.t).join("\n");
+}
+
+// Corrige confusões típicas do OCR nos números ("6:40" → "6,40", "0,810K6" → "0,810KG", "IUN" → "1UN").
+function limparLinha(bruta){
+  let l = bruta.replace(/[|“”"'´`]/g," ").replace(/\s+/g," ").trim();
+  if(/\d{1,2}[:.]\d{2}[:.]\d{2}/.test(l) || /\d{2}\/\d{2}\/\d{2}/.test(l)) return l;   // data/horário: não mexe
+  l = l
+    .replace(/(\d)\s?[:;\/]\s?(\d{2,3})\b/g, "$1,$2")
+    .replace(/(\d),\s(\d{2})\b/g, "$1,$2")
+    .replace(/(\d)\s?(?:K[G6SEC]G?|X6|KÉ)\b/gi, "$1KG")
+    .replace(/(^|\s)(\d*)[IlT|]?(?:UN|UM|WN|MN|UH|LN)(?=\s+\d)/g, (m, e, q) => e + (q || "1") + "UN");
+  // depois da unidade: "1639" → "16,39" e "5,998" → "5,99"
+  const tk = l.split(" ");
+  let iu = -1;
+  tk.forEach((t,i) => { if(/^\d+(?:[.,]\d+)?(UN|KG)$/i.test(t)) iu = i; });
+  if(iu >= 0) for(let i = iu+1; i < tk.length; i++){
+    if(/^\d{3,4}$/.test(tk[i])) tk[i] = tk[i].slice(0,-2) + "," + tk[i].slice(-2);
+    else if(/^\d+[.,]\d{3,}$/.test(tk[i])) tk[i] = tk[i].replace(/([.,]\d{2})\d+$/, "$1");
+  }
+  return tk.join(" ");
+}
+
+// Final de linha com os valores do item: "1UN 12,69 12,69" / "0,810KG 9,79 7,93" / "2 UN X 4,05 8,10".
+const PRECO_RE = "(\\d{1,4}[.,]\\d{2})";
+const CAUDA = new RegExp("(\\d+(?:[.,]\\d{1,3})?)\\s*(" + UNIDADES + ")\\.?\\s*(?:[xX*]\\s*)?" + PRECO_RE +
+                         "(?:\\s+" + PRECO_RE + ")?(?:\\s+\\S{1,5})?\\s*$", "i");
+// Sem unidade (o OCR perdeu o "UN"): "1 2,99 2,99"
+const CAUDA_SEM_UN = new RegExp("(?:^|\\s)(\\d{1,2})\\s+" + PRECO_RE + "\\s+" + PRECO_RE + "\\s*$");
+// Início de item: "001 7891150086524 LAVA ROUPA…" (número do item e, opcionalmente, código do produto)
+const INICIO_ITEM = /^[^\w]*(?:\S{1,2}\s+)?([0-9OQD]{3})\s+(?:([0-9A-Za-z%]{4,14})\s+)?(.*)$/;
+const FIM_ITENS = /t\s?de\.?\s+t[o0]ta[l1]|valor\s*\S?\s*pagar|forma\s*(de\s*)?pagamento|^total\b|^subtotal/i;
+
+function acharCauda(l){
+  const c = l.match(CAUDA);
+  if(c) return c;
+  const s = l.match(CAUDA_SEM_UN);
+  if(s){ const r = [s[0], s[1], "un", s[2], s[3]]; r.index = s.index; return r; }
+  return null;
+}
+
+function normUnidade(u){
+  u = String(u||"un").toLowerCase();
+  return ({und:"un", lt:"L", l:"L", pc:"un", cx:"un"})[u] || u;
+}
+
+function limparNome(s){
+  const tokens = s.replace(/[^\wÀ-ÿ/%.,-]+/g, " ").trim().split(/\s+/).filter(t =>
+    !((t.match(/\d/g) || []).length >= 4) &&             // códigos de barras / internos, mesmo com letras trocadas
+    !/^[0-9OQD]{3}$/.test(t) &&                           // número do item
+    !/^\d*[IlT1]?(un|kg)$/i.test(t) &&                    // "1UN", "IUN", "KG" soltos
+    !(t.length === 1 && !/[aeo]/i.test(t)));              // letra solta (lixo do OCR), menos "e", "a", "o"
+  while(tokens.length && /^(un|kg|des|g)$/i.test(tokens[tokens.length-1])) tokens.pop();
+  return titulo(tokens.join(" "));
+}
+
+// Trocas de dígito que o OCR faz com frequência em impressão térmica.
+const CONFUSOES = {"3":"98","9":"3","8":"36","1":"7","7":"1","5":"6","6":"58","0":"8"};
+function variantes(txt){
+  const s = txt.replace(".", ","), out = [[numeroBR(s), 0]];
+  for(let i=0;i<s.length;i++) for(const c of (CONFUSOES[s[i]] || "")) out.push([numeroBR(s.slice(0,i) + c + s.slice(i+1)), 1]);
+  return out;
+}
+
+/* Lê os itens do texto do cupom. Entende o formato da NFC-e (nome numa linha e
+   "qtd UN unitário total" na mesma ou na seguinte, desconto em linha própria)
+   e o formato simples "PRODUTO 2 X 4,99 9,98". */
+function interpretar(texto){
+  const linhas = texto.split(/\r?\n/).map(limparLinha);
+  const iCab = linhas.findIndex(l => /c[oó0]d[il1]go|descri[cç]/i.test(l) && letras(l) >= 8);
+  const saida = [];
+  let pendente = null;                                    // item cujo nome já apareceu, mas os valores não
+
+  const fecharPendente = () => {
+    if(pendente && letras(pendente.nome) >= 3)
+      saida.push({ produto: limparNome(pendente.nome), qtd: 1, preco: 0, unidade: "un",
+                   aviso: "preço não lido: preencha", linha: pendente.linha });
+    pendente = null;
+  };
+  const novoItem = (nome, c, linha) => {
+    const q = numeroBR(c[1]) || 1, un = normUnidade(c[2]);
+    const it = { produto: limparNome(nome), qtd: q, unidade: un, aviso: "", linha };
+    if(!c[4]){ it.preco = numeroBR(c[3]); saida.push(it); return; }
+    // qtd × unitário tem de dar o total. Se não dá, o OCR trocou algum dígito:
+    // testa as trocas comuns e guarda as combinações que fecham.
+    const ok = [];
+    for(const [u,cu] of variantes(c[3])) for(const [t,ct] of variantes(c[4]))
+      if(u > 0 && t > 0 && Math.abs(r2(q*u) - t) <= 0.01) ok.push([r2(t/q), cu+ct]);
+    ok.sort((a,b) => a[1]-b[1]);
+    const opcoes = [...new Set(ok.map(o => o[0]))];
+    if(ok.length && ok[0][1] === 0){ it.preco = ok[0][0]; }
+    else if(opcoes.length){
+      it.preco = opcoes[0]; it.opcoes = opcoes.slice(0, 4);
+      it.aviso = "conferir: lido " + c[3] + " e " + c[4];
+    }else{
+      it.preco = r2(numeroBR(c[4])/q); it.opcoes = [it.preco, numeroBR(c[3])];
+      it.aviso = "conferir: lido " + c[3] + " e " + c[4];
+    }
+    saida.push(it);
+  };
+
+  for(let i = iCab >= 0 ? iCab+1 : 0; i < linhas.length; i++){
+    const l = linhas[i];
+    if(!l) continue;
+    if(FIM_ITENS.test(l)) break;
+
+    // desconto do item anterior: "DESCONTO 3,26% R$ -0,30 8,89"
+    if(/desc[o0]n/i.test(l) && saida.length){
+      const ult = saida[saida.length-1], base = ult.opcoes || [ult.preco];
+      const vals = (l.match(MOEDA) || []).map(numeroBR), neg = l.match(/-\s*(\d+[.,]\d{2})/);
+      const d = neg ? numeroBR(neg[1]) : NaN, liqLido = vals.length ? vals[vals.length-1] : NaN;
+      // escolhe a leitura do item em que "total − desconto = líquido impresso"
+      let escolhido = null;
+      for(const p of base){ const tot = r2(ult.qtd*p);
+        if(isFinite(d) && isFinite(liqLido) && Math.abs(r2(tot - d) - liqLido) <= 0.01){ escolhido = r2(tot - d); break; } }
+      if(escolhido == null && isFinite(d)) escolhido = r2(r2(ult.qtd*ult.preco) - d);
+      if(escolhido > 0){
+        ult.preco = r2(escolhido/ult.qtd); delete ult.opcoes;
+        ult.aviso = "desconto de " + brl(d) + " aplicado";
+      }
+      continue;
+    }
+
+    const ini = l.match(INICIO_ITEM);
+    const ehItem = ini && /\d.*\d/.test(ini[1]) && letras(ini[3]) >= 2;
+    const cauda = acharCauda(l);
+    const antesCauda = cauda ? l.slice(0, cauda.index) : l;
+
+    if(ehItem){
+      fecharPendente();
+      const nome = cauda ? antesCauda.match(INICIO_ITEM)?.[3] ?? "" : ini[3];
+      if(cauda && letras(nome) >= 3){ novoItem(nome, cauda, l); continue; }
+      const simples = !cauda && itemSimples(l);
+      if(simples){ saida.push(simples); continue; }
+      pendente = { nome: ini[3], linha: l };
+      continue;
+    }
+    if(cauda){
+      if(pendente){
+        const extra = letras(antesCauda) >= 2 && !RUIDO.test(antesCauda) ? " " + antesCauda : "";
+        novoItem(pendente.nome + extra, cauda, pendente.linha + " / " + l);
+        pendente = null;
+      }else if(letras(antesCauda) >= 3 && !RUIDO.test(antesCauda)){
+        novoItem(antesCauda, cauda, l);
+      }
+      continue;
+    }
+    if(pendente){                                          // continuação do nome ("…SEMIDESN RO" + "SCA")
+      if(letras(l) >= 2 && !RUIDO.test(l) && !TEM_MOEDA.test(l)) pendente.nome += " " + l;
+      continue;
+    }
+    const simples = itemSimples(l);
+    if(simples) saida.push(simples);
+  }
+  fecharPendente();
+  return saida;
+}
+
+// Formato simples, uma linha por item: "ARROZ 5KG 2 X 24,90 49,80" ou "ARROZ 5KG 24,90".
+function itemSimples(bruta){
+    const linha = bruta;
+    if(linha.length < 5 || RUIDO.test(linha)) return null;
     const valores = linha.match(MOEDA);
-    if(!valores) continue;
+    if(!valores) return null;
 
     let qtd = 1, preco = null, aviso = "", unidade = "un";
     // padrão "2 x 24,90" / "2 UN X 24,90" / "1,500 kg x 12,90"
@@ -682,44 +996,112 @@ function interpretar(texto){
       // sem multiplicação: o último valor da linha é o preço do item
       preco = numeroBR(valores[valores.length-1]);
     }
-    if(!isFinite(preco) || preco <= 0 || preco > 100000) continue;
+    if(!isFinite(preco) || preco <= 0 || preco > 100000) return null;
 
     // nome = texto antes do primeiro número monetário, sem códigos iniciais
     let nome = linha.slice(0, linha.indexOf(valores[0]))
       .replace(/[xX*]\s*$/,"")
       .replace(/^\s*\d{1,3}[\s.)-]+/,"")        // "001 " / "1) "
-      .replace(/\b\d{6,}\b/g,"")                 // códigos de barras
+      .replace(/\b\d{4,}\b/g,"")                 // códigos de barras / códigos internos
       .replace(new RegExp("\\b(" + UNIDADES + ")\\b\\.?\\s*$", "i"),"")
       .replace(/[|_]+/g," ")
       .replace(/\s{2,}/g," ").trim();
     if(mult) nome = nome.replace(/(\d+(?:[.,]\d+)?)\s*$/,"").trim();
-    if(nome.replace(/[^A-Za-zÀ-ÿ]/g,"").length < 3) continue;
+    if(letras(nome) < 3) return null;
 
-    saida.push({ produto: titulo(nome), qtd, preco, aviso, unidade, linha });
+    return { produto: titulo(nome), qtd, preco, aviso, unidade, linha };
+}
+
+/* Quando a soma dos itens não fecha com o total do cupom, testa as leituras
+   alternativas dos itens duvidosos até achar a combinação que fecha.
+   Devolve true se fechou. */
+function ajustarPeloTotal(itens, total){
+  if(!(total > 0)) return false;
+  const soma = () => r2(itens.reduce((s,it) => s + it.qtd*it.preco, 0));
+  if(Math.abs(soma() - total) <= 0.02) return true;
+  const duv = itens.filter(it => it.opcoes && it.opcoes.length > 1);
+  const comb = duv.reduce((n,it) => n*it.opcoes.length, 1);
+  if(!duv.length || comb > 50000) return false;
+  const fixo = itens.filter(it => !duv.includes(it)).reduce((s,it) => s + it.qtd*it.preco, 0);
+  const esc = new Array(duv.length).fill(0);
+  for(let m = 0; m < comb; m++){
+    let k = m, s = fixo;
+    for(let j=0;j<duv.length;j++){ esc[j] = k % duv[j].opcoes.length; k = Math.floor(k / duv[j].opcoes.length); s += duv[j].qtd*duv[j].opcoes[esc[j]]; }
+    if(Math.abs(s - total) <= 0.02){
+      duv.forEach((it,j) => { it.preco = it.opcoes[esc[j]]; it.aviso = "corrigido pela soma do cupom"; });
+      return true;
+    }
   }
-  return saida;
+  return false;
 }
 
-function normUnidade(u){
-  u = u.toLowerCase();
-  return ({und:"un", lt:"L", l:"L", pc:"un", cx:"un"})[u] || u;
+/* Usa o total do cupom para completar a leitura: escolhe as leituras alternativas
+   que fecham a soma ou, se só um item ficou sem preço, calcula-o pela diferença. */
+function fecharComTotal(itens, total){
+  if(ajustarPeloTotal(itens, total)) return true;
+  const semPreco = itens.filter(it => !(it.preco > 0));
+  if(semPreco.length === 1 && !itens.some(it => it.opcoes && it.opcoes.length > 1)){
+    const resto = r2(total - itens.reduce((s,it) => s + it.qtd*it.preco, 0));
+    if(resto > 0){
+      semPreco[0].preco = r2(resto / semPreco[0].qtd);
+      semPreco[0].aviso = "preço calculado pelo total do cupom";
+      return true;
+    }
+  }
+  return false;
 }
 
-function cabecalho(texto){
-  const out = {};
-  // "TOTAL" seguido do valor na mesma linha (talões alinham com muitos espaços)
-  const linhaTotal = texto.split(/\r?\n/).find(l => /^\s*(?:valor\s+)?total\b/i.test(l) && TEM_MOEDA.test(l));
-  const t = linhaTotal && linhaTotal.match(/(\d{1,3}(?:\.\d{3})*,\d{2}|\d+[.,]\d{2})\s*$/);
-  if(t) out.total = numeroBR(t[1]);
-  const d = texto.match(/(\d{2})[\/.-](\d{2})[\/.-](\d{4})/);
-  if(d) out.data = `${d[3]}-${d[2]}-${d[1]}`;
-  for(const l of texto.split(/\r?\n/).slice(0,6)){
-    const t = l.replace(/\s+/g," ").trim();
-    if(t.length >= 4 && /^[A-ZÀ-Ý0-9 .&'-]+$/.test(t) && !/^\d+$/.test(t) && !RUIDO.test(t) && !RUIDO_CAB.test(t)){
-      out.mercado = titulo(t); break;
+function cabecalho(texto, original = ""){
+  const out = { totais: [] }, linhas = texto.split(/\r?\n/).map(limparLinha);
+  const linhasOrig = original.split(/\r?\n/).map(limparLinha);
+
+  // Total: "TOTAL R$ 50,00" ou "Valor a Pagar R$" (na NFC-e o valor costuma sair
+  // desalinhado, na linha de cima ou de baixo). Candidatos ordenados pelos que mais se repetem.
+  const iTot = linhas.findIndex(l => /valor\s*\S?\s*pagar|t\s?de\.?\s+t[o0]ta[l1]|^\s*(?:valor\s+)?total\b|total\s*r\$/i.test(l));
+  if(iTot >= 0){
+    const conta = new Map();
+    for(let i = Math.max(0, iTot-1); i <= Math.min(linhas.length-1, iTot+5); i++){
+      if(/troco|trib|desconto/i.test(linhas[i])) continue;
+      for(const v of (linhas[i].match(MOEDA) || []).map(numeroBR)) if(v > 0) conta.set(v, (conta.get(v)||0) + 1);
+    }
+    out.totais = [...conta.entries()].sort((a,b) => b[1]-a[1]).map(e => e[0]);
+    if(out.totais.length) out.total = out.totais[0];
+  }
+
+  // Data: dd/mm/aaaa ou dd/mm/aa — a que mais se repete (o cupom traz a data em mais de um lugar)
+  const datas = new Map();
+  for(const m of (original + "\n" + texto).matchAll(/(\d{2})[\/.-](\d{2})[\/.-](\d{4}|\d{2})(?!\d)/g)){
+    const d = +m[1], mes = +m[2], ano = m[3].length === 2 ? "20" + m[3] : m[3];
+    if(d >= 1 && d <= 31 && mes >= 1 && mes <= 12 && +ano >= 2000 && +ano <= 2099){
+      const k = `${ano}-${m[2]}-${m[1]}`; datas.set(k, (datas.get(k)||0) + 1);
+    }
+  }
+  if(datas.size) out.data = [...datas.entries()].sort((a,b) => b[1]-a[1])[0][0];
+
+  // Mercado: a linha logo após o CNPJ do emitente (razão social), sem "S/A", "LTDA"…
+  const limparRazao = s => titulo(s.replace(/\s*\b(S\/?A|LTDA|EIRELI|ME|EPP)\b.*$/i, "").replace(/[^\wÀ-ÿ &.'-]/g, " ").replace(/\s{2,}/g," ").trim());
+  const fonte = linhasOrig.length > 3 ? linhasOrig : linhas;
+  const iCnpj = fonte.slice(0, 10).findIndex(l => /cnpj/i.test(l));
+  if(iCnpj >= 0){
+    const r = fonte[iCnpj+1] || "";
+    if(letras(r) >= 4 && !RUIDO_CAB.test(r) && !/avenida|rua\b/i.test(r)) out.mercado = limparRazao(r);
+  }
+  if(!out.mercado) for(const l of fonte.slice(0,6)){
+    if(l.length >= 4 && /^[A-ZÀ-Ý0-9 .&'\/-]+$/.test(l) && letras(l) >= 4 && !RUIDO.test(l) && !RUIDO_CAB.test(l)){
+      out.mercado = limparRazao(l); break;
     }
   }
   return out;
+}
+
+// Semelhança entre dois textos (0 a 1), para reconhecer um mercado já usado mesmo com erros do OCR.
+function semelhanca(a, b){
+  const pares = s => { s = s.toLowerCase().normalize("NFD").replace(/[^a-z0-9]/g,""); const m = new Map();
+    for(let i=0;i<s.length-1;i++){ const k = s.slice(i,i+2); m.set(k, (m.get(k)||0)+1); } return [m, Math.max(0, s.length-1)]; };
+  const [ma, na] = pares(a), [mb, nb] = pares(b);
+  if(!na || !nb) return 0;
+  let comum = 0; for(const [k,n] of ma) comum += Math.min(n, mb.get(k)||0);
+  return 2*comum/(na+nb);
 }
 
 function titulo(s){
@@ -729,7 +1111,7 @@ function titulo(s){
 /* ---------- tabela de revisão ---------- */
 function conferir(){
   const el = $("conferencia");
-  const soma = itensLidos.filter(it=>!it.ignorar).reduce((s,it)=>s+(Number(it.qtd)||0)*(Number(it.preco)||0),0);
+  const soma = r2(itensLidos.filter(it=>!it.ignorar).reduce((s,it)=>s+r2((Number(it.qtd)||0)*(Number(it.preco)||0)),0));
   if(totalTalao == null){
     el.innerHTML = `<span class="muted">Soma dos itens selecionados: <strong>${brl(soma)}</strong>
       · nenhum total encontrado no talão para comparar.</span>`;
@@ -737,12 +1119,16 @@ function conferir(){
   }
   const dif = soma - totalTalao;
   const ok = Math.abs(dif) <= Math.max(0.05, totalTalao*0.005);
+  const notaDesc = descontoTalao > 0
+    ? `<div class="muted" style="margin-top:6px">Desconto no cupom: <strong>${brl(descontoTalao)}</strong>
+       (valor pago ${brl(totalTalao - descontoTalao)}). Os preços acima são sem o desconto.</div>` : "";
   el.innerHTML = ok
     ? `<div class="note" style="background:var(--brand-soft);color:var(--brand)">✔ Conferido: a soma dos itens
        (<strong>${brl(soma)}</strong>) fecha com o TOTAL do talão (${brl(totalTalao)}).</div>`
     : `<div class="note">⚠ A soma dos itens (<strong>${brl(soma)}</strong>) difere do TOTAL do talão
        (${brl(totalTalao)}) em <strong>${brl(Math.abs(dif))}</strong>. Verifique as linhas assinaladas
        — pode faltar um item ou um dígito foi lido a mais.</div>`;
+  el.innerHTML += notaDesc;
 }
 
 function renderRevisao(){
@@ -786,14 +1172,202 @@ $("btnConfirmar").addEventListener("click", () => {
   if(!mercado){ alert("Informe o mercado destes itens."); $("mercadoOCR").focus(); return; }
   const bons = itensLidos.filter(it => !it.ignorar && it.produto.trim() && it.qtd > 0 && it.preco >= 0);
   if(!bons.length){ alert("Nenhum item válido selecionado."); return; }
+  if(chaveCupom && dados.some(r => r.cupom === chaveCupom)
+     && !confirm("Este cupom já foi importado antes. Importar de novo (vai duplicar os itens)?")) return;
   for(const it of bons){
-    dados.push({ data, mercado, produto: it.produto.trim(),
-                 unidade: it.unidade || "un", qtd: Number(it.qtd), preco: Number(it.preco) });
+    const r = { data, mercado, produto: it.produto.trim(),
+                unidade: it.unidade || "un", qtd: Number(it.qtd), preco: Number(it.preco) };
+    if(chaveCupom) r.cupom = chaveCupom;      // chave de acesso da NFC-e: evita importar o mesmo cupom 2 vezes
+    dados.push(r);
   }
   salvar(); render();
-  itensLidos = []; $("revisao").style.display = "none";
+  itensLidos = []; chaveCupom = null; descontoTalao = 0; $("revisao").style.display = "none";
   $("estadoOCR").textContent = bons.length + " item(ns) importado(s) para o histórico.";
 });
+
+/* =======================================================================
+   Cupom colado da página oficial da NFC-e (aberta pelo QR Code do cupom).
+   São os dados oficiais da nota: nada de OCR, nada de erro de leitura.
+   CPF, nome e endereço do consumidor que vêm no texto são ignorados.
+   ======================================================================= */
+function interpretarColado(texto){
+  const t = String(texto || "").replace(/\r/g, "").replace(/[ \t ]+/g, " ");
+  const out = { itens: [] };
+  // "REFRI COCA COLA PET 1.5L (Código: 19622 ) Qtde.:1 UN: UN1 Vl. Unit.: 9,39 Vl. Total 9,39"
+  const re = /([^\n]+?)\s*\(\s*C[óo]d(?:igo)?\.?\s*:?\s*([^)]*)\)\s*Qtde\.?\s*:?\s*([\d.,]+)\s*UN\s*:?\s*([A-Za-z]+)\d*\s*Vl\.?\s*Unit\.?\s*:?\s*([\d.,]+)\s*Vl\.?\s*Total\s*:?\s*([\d.,]+)/gi;
+  for(const m of t.matchAll(re)){
+    const q = numeroBR(m[3]), u = numeroBR(m[5]), tot = numeroBR(m[6]);
+    if(!(q > 0) || !(tot >= 0)) continue;
+    out.itens.push({
+      produto: titulo(m[1].trim().replace(/\s+(kg|un|und)\.?$/i, "")),
+      qtd: q, unidade: normUnidade(m[4]),
+      preco: Math.abs(r2(q*u) - tot) <= 0.01 ? u : r2(tot/q),
+      aviso: "", linha: "Código " + m[2].trim()
+    });
+  }
+  const valor = rx => { const m = t.match(rx); return m ? numeroBR(m[1]) : undefined; };
+  const vTotal = valor(/Valor\s*total\s*R\$\s*:?\s*([\d.,]+)/i);
+  const vPagar = valor(/Valor\s*a\s*pagar\s*R\$\s*:?\s*([\d.,]+)/i);
+  out.desconto = valor(/Descontos?\s*R\$\s*:?\s*([\d.,]+)/i) || 0;
+  out.total = vTotal ?? (vPagar != null ? r2(vPagar + out.desconto) : undefined);
+  const d = t.match(/Emiss[ãa]o\s*:?\s*(\d{2})\/(\d{2})\/(\d{4})/i) || t.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  if(d) out.data = `${d[3]}-${d[2]}-${d[1]}`;
+  const linhas = t.split("\n").map(s => s.trim()).filter(Boolean);
+  const iCnpj = linhas.findIndex(l => /^CNPJ/i.test(l));
+  if(iCnpj > 0) out.mercado = titulo(linhas[iCnpj-1].replace(/\s*\b(S\/?A|LTDA|EIRELI|ME|EPP)\b.*$/i, "").trim());
+  const ch = t.match(/Chave\s*de\s*acesso\s*:?\s*((?:\d\s*){44})/i);
+  if(ch) out.chave = ch[1].replace(/\D/g, "");
+  return out;
+}
+
+// Se o nome parece com um mercado já usado, usa o nome já cadastrado.
+function sugerirMercado(nome){
+  const conhecidos = [...new Set(dados.map(r => r.mercado))];
+  const parecido = conhecidos.map(m => [m, semelhanca(m, nome)]).sort((a,b) => b[1]-a[1])[0];
+  return parecido && parecido[1] >= 0.6 ? parecido[0] : nome;
+}
+
+function processarColado(texto){
+  const r = interpretarColado(texto);
+  if(!r.itens.length){
+    $("caixaColar").style.display = "";
+    alert("Não encontrei produtos nesse texto.\n\nNa página da nota, segure o dedo no texto, toque em " +
+          "\"Selecionar tudo\" e depois em \"Copiar\". Depois volte aqui e toque em \"Colar cupom\".");
+    return;
+  }
+  itensLidos = r.itens;
+  totalTalao = r.total ?? null; descontoTalao = r.desconto || 0; chaveCupom = r.chave || null;
+  if(r.data) $("dataOCR").value = r.data;
+  if(r.mercado) $("mercadoOCR").value = sugerirMercado(r.mercado);
+  $("textoBruto").textContent = r.itens.map(it => `${it.produto} | ${num(it.qtd)} ${it.unidade} × ${brl(it.preco)}`).join("\n");
+  $("dicaRevisao").textContent = "Dados oficiais da nota fiscal. Confira o mercado e a data e toque em Importar.";
+  $("textoColado").value = "";                // não guarda o texto colado (tem CPF e nome do consumidor)
+  $("caixaColar").style.display = "none";
+  $("qrAberto").style.display = "none";
+  $("btnColar").classList.add("ghost"); $("btnQR").classList.remove("ghost");
+  renderRevisao();
+  $("revisao").style.display = "";
+  const repetido = chaveCupom && dados.some(x => x.cupom === chaveCupom);
+  $("estadoOCR").textContent = repetido
+    ? "⚠ Este cupom já foi importado antes."
+    : r.itens.length + " item(ns) lido(s) da nota fiscal.";
+  $("revisao").scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+$("btnColar").addEventListener("click", async () => {
+  let txt = "";
+  try{ txt = await navigator.clipboard.readText(); }catch(e){}
+  if(txt && txt.trim()) processarColado(txt);
+  else{
+    $("caixaColar").style.display = "";
+    $("textoColado").focus();
+    $("estadoOCR").textContent = "Cole o texto no campo abaixo e toque em “Ler texto colado”.";
+  }
+});
+$("btnMostrarColar").addEventListener("click", () => {
+  const c = $("caixaColar"); c.style.display = c.style.display === "none" ? "" : "none";
+  if(c.style.display === "") $("textoColado").focus();
+});
+$("btnLerColado").addEventListener("click", () => processarColado($("textoColado").value));
+
+/* ---------- leitor de QR Code dentro do app ----------
+   Usa o leitor nativo do navegador (BarcodeDetector, Android/Chrome) ou o jsQR
+   (iPhone e outros), que fica em vendor/jsqr e funciona sem internet. */
+let qrStream = null, qrAtivo = false, qrDetector = null;
+
+function carregarJsQR(){
+  if(window.jsQR) return Promise.resolve();
+  return new Promise((ok, erro) => {
+    const s = document.createElement("script"); s.src = "vendor/jsqr/jsQR.js";
+    s.onload = ok; s.onerror = () => erro(new Error("leitor de QR Code não carregou")); document.head.appendChild(s);
+  });
+}
+
+function fecharLeitorQR(){
+  qrAtivo = false;
+  if(qrStream){ qrStream.getTracks().forEach(t => t.stop()); qrStream = null; }
+  $("qrVideo").srcObject = null;
+  $("leitorQR").style.display = "none";
+}
+
+async function abrirLeitorQR(){
+  if(!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)){
+    alert("Este navegador não permite usar a câmera aqui. Use a câmera do celular para abrir o QR Code e depois toque em “Colar cupom”.");
+    return;
+  }
+  try{
+    if("BarcodeDetector" in window && (await BarcodeDetector.getSupportedFormats()).includes("qr_code"))
+      qrDetector = new BarcodeDetector({formats: ["qr_code"]});
+    else{ qrDetector = null; await carregarJsQR(); }
+    qrStream = await navigator.mediaDevices.getUserMedia({video: {facingMode: "environment", width: {ideal: 1280}, height: {ideal: 720}}, audio: false});
+  }catch(e){
+    fecharLeitorQR();
+    alert(e && e.name === "NotAllowedError"
+      ? "O app precisa de permissão para usar a câmera. Permita o acesso à câmera nas configurações do navegador e tente de novo."
+      : "Não foi possível abrir a câmera: " + (e && e.message ? e.message : e));
+    return;
+  }
+  const v = $("qrVideo");
+  v.srcObject = qrStream; await v.play().catch(()=>{});
+  $("leitorQR").style.display = ""; qrAtivo = true;
+  const cv = document.createElement("canvas"), cx = cv.getContext("2d", {willReadFrequently: true});
+  const procurar = async () => {
+    if(!qrAtivo) return;
+    let texto = null;
+    if(v.videoWidth){
+      try{
+        if(qrDetector){
+          const r = await qrDetector.detect(v); if(r.length) texto = r[0].rawValue;
+        }else{
+          const esc = Math.min(1, 800 / Math.max(v.videoWidth, v.videoHeight));
+          cv.width = Math.round(v.videoWidth*esc); cv.height = Math.round(v.videoHeight*esc);
+          cx.drawImage(v, 0, 0, cv.width, cv.height);
+          const r = jsQR(cx.getImageData(0, 0, cv.width, cv.height).data, cv.width, cv.height, {inversionAttempts: "dontInvert"});
+          if(r) texto = r.data;
+        }
+      }catch(e){}
+    }
+    if(texto){ fecharLeitorQR(); if(navigator.vibrate) navigator.vibrate(80); qrLido(texto); return; }
+    setTimeout(procurar, 150);
+  };
+  procurar();
+}
+
+// Recebe o conteúdo do QR Code: deve ser o link da consulta da NFC-e.
+function qrLido(texto){
+  let url;
+  try{ url = new URL(texto.trim()); }catch(e){ url = null; }
+  if(!url || url.protocol !== "https:"){
+    alert("Esse QR Code não é de um cupom fiscal (NFC-e). Aponte para o QR Code no rodapé do cupom.");
+    return;
+  }
+  // o parâmetro p começa com a chave de acesso (44 dígitos)
+  const p = url.searchParams.get("p") || url.search;
+  const m = String(p).match(/\d{44}/);
+  const chave = m ? m[0] : null;
+  const repetido = chave && dados.some(r => r.cupom === chave);
+  $("qrLink").href = url.href;
+  $("qrDominio").textContent = "Site: " + url.hostname;
+  $("qrMsg").innerHTML = repetido
+    ? "⚠ <strong>Este cupom já foi importado antes.</strong> Só abra a nota se quiser importar de novo."
+    : "✔ QR Code lido. Toque no botão abaixo, passe pela verificação de segurança e depois " +
+      "<strong>Selecionar tudo → Copiar</strong>. Feche a página e toque em <strong>📋 Colar cupom</strong>.";
+  $("qrAberto").style.display = "";
+  $("qrAberto").scrollIntoView({behavior: "smooth", block: "center"});
+}
+
+// Ao abrir a nota, destaca o botão "Colar cupom" para quando o cliente voltar ao app.
+$("qrLink").addEventListener("click", () => {
+  $("btnColar").classList.remove("ghost"); $("btnQR").classList.add("ghost");
+  $("qrMsg").innerHTML = "Depois de copiar a nota, feche a página e toque em <strong>📋 Colar cupom</strong>.";
+});
+document.addEventListener("visibilitychange", () => {
+  if(document.visibilityState === "visible" && $("qrAberto").style.display === "" && !$("btnColar").classList.contains("ghost"))
+    $("btnColar").scrollIntoView({behavior: "smooth", block: "center"});
+});
+
+$("btnQR").addEventListener("click", abrirLeitorQR);
+$("btnFecharQR").addEventListener("click", fecharLeitorQR);
 
 /* ---------- início ---------- */
 $("data").value = $("dataOCR").value = hoje();

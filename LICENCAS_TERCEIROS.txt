@@ -16,5 +16,9 @@ https://www.apache.org/licenses/LICENSE-2.0
 - Dados de idioma português (lang/por.traineddata.gz)
   Copyright (c) Google e colaboradores - https://github.com/tesseract-ocr/tessdata
 
+- jsQR 1.4.0 (vendor/jsqr/jsQR.js) - leitor de QR Code
+  Copyright (c) Cosmo Wolfe - https://github.com/cozmo/jsQR
+  Apache License 2.0 (texto completo em vendor/jsqr/LICENSE.txt)
+
 Esses componentes são fornecidos "COMO ESTÃO", sem garantias de qualquer tipo,
 conforme os termos da licença acima.

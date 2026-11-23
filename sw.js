@@ -1,13 +1,14 @@
 /* Service worker: guarda o app e o motor de OCR no aparelho para funcionar sem internet.
    Páginas: busca a versão nova primeiro (rede) e usa a guardada se estiver offline.
    Motor de OCR e ícones: usa a cópia guardada (não mudam). */
-const VERSAO = "precos-v3";
+const VERSAO = "precos-v7";
 const ARQUIVOS = [
-  "./", "index.html", "manual.html", "manifest.json",
+  "./", "index.html", "manual.html", "guia_rapido.html", "manifest.json",
   "icones/icone-192.png", "icones/icone-512.png", "icones/icone-maskable-512.png", "icones/apple-touch-icon.png",
   "vendor/tesseract/tesseract.min.js", "vendor/tesseract/worker.min.js",
   "vendor/tesseract/tesseract-core-lstm.wasm.js", "vendor/tesseract/tesseract-core-simd-lstm.wasm.js",
-  "vendor/tesseract/lang/por.traineddata.gz"
+  "vendor/tesseract/lang/por.traineddata.gz",
+  "vendor/jsqr/jsQR.js"
 ];
 
 self.addEventListener("install", ev => {

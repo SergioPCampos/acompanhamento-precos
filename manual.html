@@ -47,7 +47,7 @@
   <h2>Índice</h2>
   <ol>
     <li><a href="#abrir">Instalar e ativar</a></li>
-    <li><a href="#cupom">Ler um cupom fiscal pela foto</a></li>
+    <li><a href="#cupom">Importar um cupom (QR Code ou foto)</a></li>
     <li><a href="#manual">Registrar um produto à mão</a></li>
     <li><a href="#relatorios">Entender os relatórios</a></li>
     <li><a href="#historico">Histórico: buscar e apagar</a></li>
@@ -88,13 +88,32 @@
 </section>
 
 <section class="card" id="cupom">
-  <h2>2. Ler um cupom fiscal pela foto</h2>
+  <h2>2. Importar um cupom fiscal</h2>
+
+  <h3>✅ Pelo QR Code (recomendado: sem erros)</h3>
+  <p>Traz os dados oficiais da nota fiscal, direto do site da Receita. Precisa de internet só nesse momento.</p>
   <ol>
-    <li>No quadro <strong>📷 Importar por imagem</strong>, clique em <strong>Foto do talão</strong> e escolha a foto do cupom.</li>
-    <li>A foto aparece em preto e branco. Se estiver deitada, clique em <strong>Girar 90°</strong> até ficar em pé.</li>
-    <li>Confira o <strong>Mercado</strong> e a <strong>Data</strong>. O app tenta preenchê-los sozinho depois da leitura.</li>
-    <li>Clique em <strong>Ler imagem</strong> e aguarde a barra de progresso. Leva de alguns segundos a 1 minuto.</li>
-    <li>Aparece a tabela <strong>Revisar itens detetados</strong>:
+    <li>No app, toque em <strong>📷 Ler QR Code</strong> e aponte para o <strong>QR Code</strong> no rodapé do cupom.
+        Na primeira vez, o celular pede permissão para usar a câmera: toque em <strong>Permitir</strong>.
+        (Também funciona abrir o QR Code pela câmera normal do celular.)</li>
+    <li>Toque em <strong>🌐 Abrir nota no site da Receita</strong>. Se aparecer <strong>“Validação de segurança”</strong>,
+        espere alguns segundos ou toque na caixinha, até aparecer a lista de produtos.</li>
+    <li>Segure o dedo em cima do texto da nota, toque em <strong>Selecionar tudo</strong> e depois em <strong>Copiar</strong>.</li>
+    <li>Feche a página da Receita e, no app, toque em <strong>📋 Colar cupom</strong>. Se o celular perguntar, permita colar.
+        Se não funcionar, toque em <strong>Colar à mão</strong>, cole no campo e toque em <strong>Ler texto colado</strong>.</li>
+    <li>Aparece a lista com todos os produtos. Confira o mercado e a data e toque em <strong>Importar selecionados</strong>.</li>
+  </ol>
+  <div class="ok">O app guarda a chave do cupom: se você tentar importar o mesmo cupom de novo, ele avisa.
+  O CPF e o nome que aparecem na página da nota <strong>não são guardados</strong>.</div>
+
+  <h3>📷 Pela foto (sem internet)</h3>
+  <p>Útil quando não há internet. A leitura de foto pode errar números: <strong>confira os preços</strong> antes de importar.</p>
+  <ol>
+    <li>Em <strong>Pela foto</strong>, toque em <strong>Foto do cupom</strong> e escolha ou tire a foto.</li>
+    <li>A foto aparece tratada em preto e branco. Se estiver deitada, toque em <strong>Girar 90°</strong> até ficar em pé.</li>
+    <li>Toque em <strong>Ler imagem</strong> e aguarde a barra de progresso (alguns segundos).</li>
+    <li>Confira o <strong>Mercado</strong> e a <strong>Data</strong> na tela de revisão.</li>
+    <li>Aparece a tabela <strong>Revisar itens do cupom</strong>:
       <ul>
         <li>corrija nome, quantidade ou preço clicando no campo;</li>
         <li>desmarque <strong>Usar</strong> nas linhas que não são produtos;</li>

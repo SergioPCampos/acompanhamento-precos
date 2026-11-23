@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guia Rápido — Acompanhamento de Preços</title>
+<link rel="icon" type="image/png" href="icones/icone-192.png">
+<meta name="theme-color" content="#0f6b4f">
+<style>
+  :root{
+    --bg:#f4f6f8; --card:#ffffff; --ink:#16202a; --muted:#5d6b7a;
+    --line:#dfe5ec; --brand:#0f6b4f; --brand-soft:#e6f2ed;
+    --warn:#8a5a00; --warn-bg:#fff6e0;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:17px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+  .wrap{max-width:680px;margin:0 auto;padding:16px}
+  header{background:var(--brand);color:#fff;padding:18px 16px}
+  header .wrap{padding:0}
+  header h1{margin:0;font-size:1.35rem}
+  header p{margin:4px 0 0;opacity:.92;font-size:.92rem}
+  header a{color:#fff}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:16px 0}
+  h2{font-size:1.1rem;margin:0 0 4px;color:var(--brand)}
+  .quando{color:var(--muted);font-size:.9rem;margin:0 0 12px}
+  .passo{display:flex;gap:12px;align-items:flex-start;margin:12px 0}
+  .num{flex:0 0 32px;height:32px;border-radius:50%;background:var(--brand);color:#fff;
+       display:flex;align-items:center;justify-content:center;font-weight:700}
+  .passo p{margin:4px 0 0}
+  .ok{background:var(--brand-soft);color:var(--brand);border-radius:8px;padding:10px 12px;font-size:.92rem;margin-top:10px}
+  .note{background:var(--warn-bg);color:var(--warn);border-radius:8px;padding:10px 12px;font-size:.92rem;margin-top:10px}
+  strong{font-weight:650}
+  @media print{
+    header{background:#fff;color:#000} header a{color:#000} body{background:#fff}
+    .card{break-inside:avoid;border-color:#999} .num{border:1px solid #000;color:#000;background:#fff}
+  }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>🛒 Guia rápido</h1>
+  <p>Acompanhamento de Preços em poucos passos. <a href="index.html">← Voltar ao app</a></p>
+</div></header>
+
+<div class="wrap">
+
+<section class="card">
+  <h2>1. Instalar o app</h2>
+  <p class="quando">Só na primeira vez.</p>
+  <div class="passo"><div class="num">1</div><p>Abra o <strong>link do app</strong> que você recebeu.</p></div>
+  <div class="passo"><div class="num">2</div><p>
+    <strong>Android:</strong> toque em <strong>⋮</strong> (canto de cima) → <strong>Instalar app</strong>.<br>
+    <strong>iPhone:</strong> toque em <strong>Compartilhar</strong> → <strong>Adicionar à Tela de Início</strong>.<br>
+    <strong>Computador:</strong> clique no ícone de instalar, no fim da barra de endereço.</p></div>
+  <div class="passo"><div class="num">3</div><p>Pronto: aparece o <strong>ícone do carrinho verde</strong>. Abra sempre por ele.</p></div>
+</section>
+
+<section class="card">
+  <h2>2. Ativar</h2>
+  <p class="quando">Só na primeira vez, em cada aparelho.</p>
+  <div class="passo"><div class="num">1</div><p>Abra o app. Aparece a tela <strong>Ativar</strong>.</p></div>
+  <div class="passo"><div class="num">2</div><p>Toque em <strong>Enviar pelo WhatsApp</strong> e envie a mensagem com o código.</p></div>
+  <div class="passo"><div class="num">3</div><p>Você recebe uma <strong>chave</strong> (texto que começa com <strong>AP1.</strong>).
+    Copie a chave <strong>inteira</strong>.</p></div>
+  <div class="passo"><div class="num">4</div><p>Cole no campo do app e toque em <strong>Ativar</strong>.</p></div>
+</section>
+
+<section class="card">
+  <h2>3. Registrar uma compra</h2>
+  <p class="quando">Depois de cada compra, com o cupom fiscal na mão.</p>
+  <div class="passo"><div class="num">1</div><p>No app, toque em <strong>📷 Ler QR Code</strong> e aponte para o
+    <strong>QR Code</strong> no fim do cupom. Na primeira vez, permita o uso da câmera.</p></div>
+  <div class="passo"><div class="num">2</div><p>Toque em <strong>🌐 Abrir nota no site da Receita</strong>. Se pedir
+    <strong>validação de segurança</strong>, espere ou toque na caixinha até aparecer a lista de produtos.</p></div>
+  <div class="passo"><div class="num">3</div><p>Segure o dedo no texto → <strong>Selecionar tudo</strong> → <strong>Copiar</strong>.</p></div>
+  <div class="passo"><div class="num">4</div><p>Feche a página da Receita. No app, toque em <strong>📋 Colar cupom</strong>.</p></div>
+  <div class="passo"><div class="num">5</div><p>Confira o <strong>mercado</strong> e a <strong>data</strong> e toque em
+    <strong>Importar selecionados</strong>.</p></div>
+  <div class="ok">✔ Os preços vêm direto da nota fiscal, sem erro. Se importar o mesmo cupom duas vezes, o app avisa.</div>
+  <div class="note"><strong>Sem internet?</strong> Use <strong>Pela foto</strong>: tire uma foto do cupom, toque em
+    <strong>Ler imagem</strong> e <strong>confira os preços</strong> antes de importar, porque a leitura de foto pode errar números.</div>
+</section>
+
+<section class="card">
+  <h2>4. Ver onde está mais barato</h2>
+  <p class="quando">Sempre que quiser.</p>
+  <div class="passo"><div class="num">1</div><p>Role a tela do app para baixo.</p></div>
+  <div class="passo"><div class="num">2</div><p><strong>🏷️ Melhor preço por produto:</strong> o menor preço que você já pagou,
+    em qual mercado e quando, e quanto o mais caro custou a mais.</p></div>
+  <div class="passo"><div class="num">3</div><p><strong>🏪 Gasto por mercado</strong> e <strong>📅 Gasto por mês:</strong>
+    para onde vai o seu dinheiro e se o mês subiu ou caiu.</p></div>
+</section>
+
+<section class="card">
+  <h2>5. Guardar uma cópia de segurança</h2>
+  <p class="quando">Uma vez por mês.</p>
+  <div class="passo"><div class="num">1</div><p>No fim da tela, em <strong>Histórico</strong>, toque em <strong>Exportar CSV</strong>.</p></div>
+  <div class="passo"><div class="num">2</div><p>Guarde o arquivo (Google Drive, e-mail, WhatsApp para você mesmo).</p></div>
+  <div class="note">Os dados ficam só no seu celular. Se trocar de aparelho ou limpar os dados do navegador,
+    use <strong>Importar CSV</strong> para recuperar e peça uma nova chave de ativação.</div>
+</section>
+
+<p style="text-align:center"><a href="manual.html" style="color:var(--brand)">Manual completo e solução de problemas →</a></p>
+</div>
+</body>
+</html>
