@@ -361,7 +361,7 @@ function renderMelhor(){
     linhas.push(`<tr>
       <td>${esc(melhor.produto)} <span class="pill">${esc(melhor.unidade||"un")}</span></td>
       <td class="down"><strong>${brl(min)}</strong></td>
-      <td>${esc(melhor.mercado)} <span class="muted">· ${dataBR(melhor.data)}</span></td>
+      <td><span>${esc(melhor.mercado)} <span class="muted" style="white-space:nowrap">· ${dataBR(melhor.data)}</span></span></td>
       <td class="num">${brl(media)}</td>
       <td class="num">${brl(max)}</td>
       <td class="num ${dif>0?"up":""}">${dif>0?pct(dif):"—"}</td>
