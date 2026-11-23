@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manual — Acompanhamento de Preços</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%F0%9F%93%96%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#f4f6f8; --card:#ffffff; --ink:#16202a; --muted:#5d6b7a;
+    --line:#dfe5ec; --brand:#0f6b4f; --brand-soft:#e6f2ed;
+    --warn:#8a5a00; --warn-bg:#fff6e0;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+  .wrap{max-width:820px;margin:0 auto;padding:16px}
+  header{background:var(--brand);color:#fff;padding:18px 16px}
+  header .wrap{padding:0}
+  header h1{margin:0;font-size:1.35rem}
+  header p{margin:4px 0 0;opacity:.9;font-size:.9rem}
+  header a{color:#fff}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 20px;margin:16px 0}
+  h2{font-size:1.1rem;margin:0 0 10px;color:var(--brand)}
+  h3{font-size:1rem;margin:16px 0 6px}
+  ol,ul{padding-left:22px;margin:8px 0} li{margin:4px 0}
+  .note{background:var(--warn-bg);color:var(--warn);border-radius:8px;padding:10px 12px;font-size:.92rem;margin:10px 0}
+  .ok{background:var(--brand-soft);color:var(--brand);border-radius:8px;padding:10px 12px;font-size:.92rem;margin:10px 0}
+  code,kbd{background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:.9em}
+  nav ol{columns:2;column-gap:24px} @media(max-width:560px){nav ol{columns:1}}
+  nav a{color:var(--brand)}
+  table{width:100%;border-collapse:collapse;font-size:.95rem}
+  th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  th{font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  @media print{header{background:#fff;color:#000} header a{color:#000} body{background:#fff} .card{break-inside:avoid;border-color:#999}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>📖 Manual do usuário — Acompanhamento de Preços</h1>
+  <p>Como registrar compras, ler cupons fiscais e comparar preços. <a href="index.html">← Voltar ao app</a></p>
+</div></header>
+
+<div class="wrap">
+
+<nav class="card">
+  <h2>Índice</h2>
+  <ol>
+    <li><a href="#abrir">Instalar e ativar</a></li>
+    <li><a href="#cupom">Ler um cupom fiscal pela foto</a></li>
+    <li><a href="#manual">Registrar um produto à mão</a></li>
+    <li><a href="#relatorios">Entender os relatórios</a></li>
+    <li><a href="#historico">Histórico: buscar e apagar</a></li>
+    <li><a href="#backup">Cópia de segurança (CSV)</a></li>
+    <li><a href="#dicas">Dicas para uma boa leitura</a></li>
+    <li><a href="#problemas">Problemas comuns</a></li>
+  </ol>
+</nav>
+
+<section class="card" id="abrir">
+  <h2>1. Instalar e ativar</h2>
+
+  <h3>Instalar</h3>
+  <p>Abra o link do aplicativo que você recebeu na compra e instale:</p>
+  <ul>
+    <li><strong>Android (Chrome):</strong> menu <strong>⋮</strong> → <strong>Instalar app</strong>
+        (ou “Adicionar à tela inicial”).</li>
+    <li><strong>iPhone (Safari):</strong> botão <strong>Compartilhar</strong> → <strong>Adicionar à Tela de Início</strong>.</li>
+    <li><strong>Computador (Chrome ou Edge):</strong> clique no ícone de instalar, na ponta direita da barra de endereço,
+        ou menu → <strong>Instalar Acompanhamento de Preços</strong>.</li>
+  </ul>
+  <p>Aparece o ícone do carrinho verde. A partir daí, abra sempre por ele.</p>
+
+  <h3>Ativar</h3>
+  <ol>
+    <li>Na primeira abertura aparece a tela <strong>Ativar</strong>, com o <strong>código deste aparelho</strong>
+        (ex.: <code>YEQK-WNWJ-VRHV-7Q1K</code>).</li>
+    <li>Toque em <strong>Enviar pelo WhatsApp</strong>: abre uma conversa com o vendedor já com o código escrito.
+        É só enviar.</li>
+    <li>Você recebe de volta uma <strong>chave de ativação</strong> (um texto longo que começa com <code>AP1.</code>).</li>
+    <li>Cole a chave inteira no campo e toque em <strong>Ativar</strong>.</li>
+  </ol>
+  <div class="note">A chave vale para <strong>um aparelho</strong>. Para usar no celular e no computador, envie os dois códigos.
+  Se limpar os dados do navegador ou trocar de aparelho, aparece um código novo e é preciso ativar de novo.</div>
+
+  <div class="ok">Depois de instalado, o app funciona <strong>sem internet</strong>.
+  Nenhuma foto nem dado de compra sai do seu aparelho.</div>
+</section>
+
+<section class="card" id="cupom">
+  <h2>2. Ler um cupom fiscal pela foto</h2>
+  <ol>
+    <li>No quadro <strong>📷 Importar por imagem</strong>, clique em <strong>Foto do talão</strong> e escolha a foto do cupom.</li>
+    <li>A foto aparece em preto e branco. Se estiver deitada, clique em <strong>Girar 90°</strong> até ficar em pé.</li>
+    <li>Confira o <strong>Mercado</strong> e a <strong>Data</strong>. O app tenta preenchê-los sozinho depois da leitura.</li>
+    <li>Clique em <strong>Ler imagem</strong> e aguarde a barra de progresso. Leva de alguns segundos a 1 minuto.</li>
+    <li>Aparece a tabela <strong>Revisar itens detetados</strong>:
+      <ul>
+        <li>corrija nome, quantidade ou preço clicando no campo;</li>
+        <li>desmarque <strong>Usar</strong> nas linhas que não são produtos;</li>
+        <li>use <strong>Adicionar linha vazia</strong> para incluir um item que não foi lido;</li>
+        <li>linhas com <strong>⚠</strong> merecem atenção: o app desconfiou da leitura.</li>
+      </ul>
+    </li>
+    <li>Olhe a <strong>conferência</strong> abaixo da tabela:
+      <ul>
+        <li><strong>✔ Conferido</strong>: a soma dos itens bate com o TOTAL do cupom;</li>
+        <li><strong>⚠ difere</strong>: falta algum item ou algum valor foi lido errado. Compare com o cupom.</li>
+      </ul>
+    </li>
+    <li>Clique em <strong>Importar selecionados</strong>. Os itens vão para o histórico.</li>
+  </ol>
+  <div class="note">Nada é salvo antes de você clicar em <strong>Importar selecionados</strong>.
+  Se a leitura ficou ruim, clique em <strong>Descartar leitura</strong> e tente outra foto.</div>
+  <p>Quer ver exatamente o que o app leu? Abra <strong>Ver texto bruto reconhecido</strong>, abaixo da tabela.</p>
+</section>
+
+<section class="card" id="manual">
+  <h2>3. Registrar um produto à mão</h2>
+  <p>No quadro <strong>➕ Registar produto</strong>:</p>
+  <ol>
+    <li>Preencha <strong>Data</strong>, <strong>Mercado</strong> e <strong>Produto</strong>. Depois do primeiro registro,
+        o app sugere nomes já usados enquanto você digita.</li>
+    <li>Escolha a <strong>Unidade</strong>: un, kg, g, L, ml ou pct.</li>
+    <li>Informe a <strong>Quantidade</strong> e o <strong>Preço unitário</strong>. O total aparece ao lado do botão.</li>
+    <li>Clique em <strong>Adicionar ao histórico</strong>.</li>
+  </ol>
+  <div class="note"><strong>Dica:</strong> escreva o mesmo produto sempre do mesmo jeito
+  (ex.: sempre “Arroz Tio João 5kg”). O app compara preços pelo nome. Grafias diferentes viram produtos diferentes.</div>
+</section>
+
+<section class="card" id="relatorios">
+  <h2>4. Entender os relatórios</h2>
+  <table>
+    <tr><th>Quadro</th><th>O que mostra</th></tr>
+    <tr><td>📊 Resumo calculado</td><td>Total gasto, número de registros, produtos e mercados diferentes, média por item e por mês.</td></tr>
+    <tr><td>🏷️ Melhor preço por produto</td><td>Para cada produto: o menor preço pago, onde e quando, a média, o mais caro e quanto o mais caro custou a mais (%).</td></tr>
+    <tr><td>🏪 Gasto por mercado</td><td>Quanto você gastou em cada mercado e a fatia de cada um no total.</td></tr>
+    <tr><td>📅 Gasto por mês</td><td>Total de cada mês e a variação em relação ao mês anterior (vermelho = subiu, verde = caiu).</td></tr>
+  </table>
+  <p>Os relatórios se atualizam sozinhos a cada registro.</p>
+</section>
+
+<section class="card" id="historico">
+  <h2>5. Histórico: buscar e apagar</h2>
+  <ul>
+    <li>Digite no campo <strong>Filtrar</strong> para achar um produto ou mercado.</li>
+    <li>O botão <strong>✕</strong> apaga um registro (pede confirmação).</li>
+    <li>Para corrigir um registro, apague-o e registre de novo. Ainda não existe edição.</li>
+    <li><strong>Imprimir / PDF</strong> gera uma versão para imprimir ou salvar em PDF.</li>
+    <li><strong>Limpar tudo</strong> apaga todo o histórico. <strong>Não tem volta</strong>: faça uma cópia antes.</li>
+  </ul>
+</section>
+
+<section class="card" id="backup">
+  <h2>6. Cópia de segurança (CSV)</h2>
+  <p>Os dados ficam guardados <strong>dentro do navegador</strong>, neste computador. Eles se perdem se você:</p>
+  <ul>
+    <li>limpar os dados de navegação ou os cookies;</li>
+    <li>trocar de navegador (do Chrome para o Edge, por exemplo) ou de computador;</li>
+    <li>usar janela anônima.</li>
+  </ul>
+  <p><strong>Por isso, exporte com frequência:</strong></p>
+  <ol>
+    <li>No Histórico, clique em <strong>Exportar CSV</strong>. Será salvo o arquivo <code>historico_precos.csv</code>, que abre no Excel.</li>
+    <li>Guarde esse arquivo em lugar seguro (OneDrive, pen drive).</li>
+    <li>Para recuperar, clique em <strong>Importar CSV</strong> e escolha o arquivo.</li>
+  </ol>
+  <div class="note">Importar o mesmo arquivo duas vezes <strong>duplica</strong> os registros.
+  Para restaurar tudo, use antes <strong>Limpar tudo</strong>, depois importe.</div>
+  <div class="note">Cada aparelho tem o <strong>seu próprio histórico</strong>: o celular e o computador não compartilham dados.
+  Para levar os dados de um para outro, use <strong>Exportar CSV</strong> num e <strong>Importar CSV</strong> no outro.</div>
+</section>
+
+<section class="card" id="dicas">
+  <h2>7. Dicas para uma boa leitura do cupom</h2>
+  <ul>
+    <li>Fotografe com <strong>boa luz</strong>, sem sombra e sem flash estourando o papel.</li>
+    <li>Deixe o cupom <strong>esticado e reto</strong>, ocupando a foto quase toda.</li>
+    <li>Cupom muito comprido? Tire <strong>duas ou três fotos</strong> e leia uma de cada vez.</li>
+    <li>Leia o cupom <strong>logo depois da compra</strong>: o papel térmico apaga com o tempo.</li>
+    <li>Sempre confira a mensagem <strong>✔ Conferido</strong> antes de importar.</li>
+  </ul>
+</section>
+
+<section class="card" id="problemas">
+  <h2>8. Problemas comuns</h2>
+  <table>
+    <tr><th>Problema</th><th>O que fazer</th></tr>
+    <tr><td>“Chave inválida”</td>
+        <td>A chave foi cortada ao copiar. Copie de novo a mensagem inteira, do <code>AP1.</code> até o fim, e cole.</td></tr>
+    <tr><td>“Esta chave foi gerada para outro aparelho”</td>
+        <td>O código do aparelho mudou (dados do navegador apagados ou outro aparelho). Envie o código que aparece agora ao vendedor.</td></tr>
+    <tr><td>O app pediu ativação de novo</td>
+        <td>Os dados do navegador foram apagados. Envie o novo código ao vendedor e importe o último CSV exportado.</td></tr>
+    <tr><td>Nenhum item reconhecido</td>
+        <td>Gire a foto até o texto ficar em pé, tire uma foto mais nítida ou registre à mão.</td></tr>
+    <tr><td>Itens com nome estranho ou preço errado</td>
+        <td>Corrija na tabela de revisão antes de importar. Compare com o texto bruto.</td></tr>
+    <tr><td>Meu histórico sumiu</td>
+        <td>Confira se abriu pelo ícone do app, no mesmo aparelho de sempre. Se não estiver lá, importe o último CSV exportado.</td></tr>
+  </table>
+</section>
+
+</div>
+</body>
+</html>

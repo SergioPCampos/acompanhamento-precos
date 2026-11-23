@@ -1,0 +1,20 @@
+Acompanhamento de Preços - componentes de terceiros
+====================================================
+
+Este aplicativo inclui os componentes abaixo, sem modificações, na pasta
+vendor/tesseract/. Eles são distribuídos sob a Apache License, Version 2.0:
+https://www.apache.org/licenses/LICENSE-2.0
+(texto completo no arquivo vendor/tesseract/LICENSE-Apache-2.0.txt)
+
+- Tesseract.js 5.1.1 (tesseract.min.js, worker.min.js)
+  Copyright (c) Naptha / projeto Tesseract.js - https://github.com/naptha/tesseract.js
+
+- tesseract.js-core (tesseract-core-lstm.wasm.js, tesseract-core-simd-lstm.wasm.js)
+  Compilação em WebAssembly do motor Tesseract OCR
+  Copyright (c) Google e colaboradores do Tesseract OCR - https://github.com/tesseract-ocr/tesseract
+
+- Dados de idioma português (lang/por.traineddata.gz)
+  Copyright (c) Google e colaboradores - https://github.com/tesseract-ocr/tessdata
+
+Esses componentes são fornecidos "COMO ESTÃO", sem garantias de qualquer tipo,
+conforme os termos da licença acima.

@@ -1,0 +1,896 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Acompanhamento de Preços</title>
+<link rel="icon" type="image/png" href="icones/icone-192.png">
+<link rel="apple-touch-icon" href="icones/apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f6b4f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Preços">
+<style>
+  :root{
+    --bg:#f4f6f8; --card:#ffffff; --ink:#16202a; --muted:#5d6b7a;
+    --line:#dfe5ec; --brand:#0f6b4f; --brand-soft:#e6f2ed;
+    --up:#b3261e; --down:#0f6b4f; --warn:#8a5a00; --warn-bg:#fff6e0;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:16px}
+  header{background:var(--brand);color:#fff;padding:18px 16px}
+  header .wrap{padding:0}
+  header h1{margin:0;font-size:1.35rem}
+  header p{margin:4px 0 0;opacity:.9;font-size:.9rem}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;
+        padding:16px;margin:16px 0}
+  h2{font-size:1.05rem;margin:0 0 12px}
+  label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:4px}
+  input,select{width:100%;padding:9px 10px;border:1px solid var(--line);
+               border-radius:7px;font-size:15px;background:#fff;color:var(--ink)}
+  .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  button{padding:9px 14px;border-radius:7px;border:1px solid var(--brand);
+         background:var(--brand);color:#fff;font-size:14px;cursor:pointer}
+  button.ghost{background:#fff;color:var(--brand)}
+  button.danger{background:#fff;color:var(--up);border-color:var(--up)}
+  button:hover{filter:brightness(.95)}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  th{font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .tiles{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+  .tile{background:var(--brand-soft);border-radius:9px;padding:12px}
+  .tile span{display:block;font-size:.75rem;color:var(--muted)}
+  .tile strong{font-size:1.3rem;font-variant-numeric:tabular-nums}
+  .up{color:var(--up)} .down{color:var(--down)}
+  .muted{color:var(--muted)}
+  .empty{color:var(--muted);font-style:italic;padding:8px 0}
+  .bar{height:10px;background:var(--brand);border-radius:5px;min-width:2px}
+  .note{background:var(--warn-bg);color:var(--warn);border-radius:8px;padding:10px;font-size:.85rem}
+  .scroll{overflow-x:auto}
+  .pill{display:inline-block;padding:1px 7px;border:1px solid var(--line);
+        border-radius:99px;font-size:.75rem;color:var(--muted)}
+  /* ativação: enquanto não houver licença válida, só a tela de ativação aparece */
+  body.bloqueado > header, body.bloqueado > .wrap{display:none}
+  #ativacao{display:none;max-width:560px;margin:0 auto;padding:16px}
+  body.bloqueado #ativacao{display:block}
+  #ativacao .codigo{font:600 1.35rem/1.3 ui-monospace,Consolas,monospace;letter-spacing:.06em;
+    background:var(--brand-soft);color:var(--brand);border-radius:8px;padding:12px;text-align:center;margin:8px 0}
+  #ativacao textarea{width:100%;min-height:90px;padding:9px 10px;border:1px solid var(--line);border-radius:7px;
+    font:13px ui-monospace,Consolas,monospace;word-break:break-all}
+  #ativacao ol{padding-left:20px} #ativacao li{margin:8px 0}
+  .erro{background:#fdecea;color:var(--up);border-radius:8px;padding:10px;font-size:.9rem;display:none}
+  @media print{
+    header{background:#fff;color:#000} button,.no-print{display:none!important}
+    body{background:#fff} .card{border-color:#999;break-inside:avoid}
+  }
+</style>
+</head>
+<body class="bloqueado">
+<section id="ativacao">
+  <div class="card">
+    <h2>🔑 Ativar o Acompanhamento de Preços</h2>
+    <p class="muted" style="margin-top:-6px">Este aplicativo precisa de uma chave de ativação para este aparelho.</p>
+    <ol>
+      <li>Envie o <strong>código deste aparelho</strong> para quem lhe vendeu o app:
+        <div class="codigo" id="codAparelho">…</div>
+        <div class="row"><a id="btnWhats" target="_blank" rel="noopener"><button type="button">Enviar pelo WhatsApp</button></a>
+          <button type="button" class="ghost" id="btnCopiarCod">Copiar código</button>
+          <span class="muted" id="copiado"></span></div>
+        <p class="muted" id="contatoVenda" style="margin:8px 0 0"></p>
+      </li>
+      <li>Cole aqui a <strong>chave de ativação</strong> que você recebeu:
+        <textarea id="chaveLicenca" placeholder="AP1.…" spellcheck="false" autocomplete="off"></textarea>
+        <div class="erro" id="erroLicenca" style="margin-top:8px"></div>
+        <div class="row" style="margin-top:10px"><button type="button" id="btnAtivar">Ativar</button>
+          <a href="manual.html" class="muted">Ajuda</a></div>
+      </li>
+    </ol>
+    <p class="muted" style="font-size:.8rem">A chave vale só para este aparelho e este navegador.
+      Se limpar os dados do navegador, será preciso ativar de novo com o mesmo procedimento.</p>
+  </div>
+</section>
+
+<header><div class="wrap">
+  <h1>🛒 Acompanhamento de Preços</h1>
+  <p>Registro e comparação de preços de supermercado, 100% offline.
+    · <a href="manual.html" style="color:#fff">📖 Como usar</a>
+    <span id="licenciadoPara"></span></p>
+</div></header>
+
+<div class="wrap">
+
+
+  <div class="card no-print">
+    <h2>📷 Importar por imagem (OCR offline)</h2>
+    <p class="muted" style="margin-top:-6px">Leitura feita no seu computador pelo motor Tesseract (WebAssembly).
+    Sem internet, sem IA na nuvem, sem tokens.</p>
+    <div id="avisoProtocolo" class="note" style="display:none;margin-bottom:12px"></div>
+    <div class="grid">
+      <div><label for="foto">Foto do talão ou etiqueta</label><input type="file" id="foto" accept="image/*"></div>
+      <div><label for="mercadoOCR">Mercado destes itens</label><input id="mercadoOCR" list="mercados" placeholder="Nome do mercado"></div>
+      <div><label for="dataOCR">Data destes itens</label><input type="date" id="dataOCR"></div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button type="button" id="btnLer" disabled>Ler imagem</button>
+      <button type="button" class="ghost" id="btnGirar" style="display:none">Girar 90°</button>
+      <span class="muted" id="estadoOCR"></span>
+    </div>
+    <div id="progresso" style="display:none;margin-top:10px">
+      <div style="background:var(--line);border-radius:5px"><div class="bar" id="barraOCR" style="width:0%"></div></div>
+    </div>
+    <canvas id="tela" style="display:none;max-width:100%;margin-top:12px;border:1px solid var(--line);border-radius:8px"></canvas>
+
+    <div id="revisao" style="display:none;margin-top:16px">
+      <h2>Revisar itens detetados</h2>
+      <p class="muted" style="margin-top:-6px">Corrija o que o OCR leu mal, desmarque o que não quer e confirme.</p>
+      <div class="scroll"><table id="tabRevisao">
+        <thead><tr><th>Usar</th><th>Produto</th><th class="num">Qtd</th><th class="num">Preço un. (R$)</th><th class="num">Total</th><th>Linha lida</th></tr></thead>
+        <tbody></tbody></table></div>
+      <div id="conferencia" style="margin-top:10px"></div>
+      <div class="row" style="margin-top:12px">
+        <button type="button" id="btnConfirmar">Importar selecionados</button>
+        <button type="button" class="ghost" id="btnLinha">Adicionar linha vazia</button>
+        <button type="button" class="danger" id="btnDescartar">Descartar leitura</button>
+      </div>
+      <details style="margin-top:12px"><summary class="muted">Ver texto bruto reconhecido</summary>
+        <pre id="textoBruto" style="white-space:pre-wrap;font-size:12px;background:var(--bg);padding:10px;border-radius:8px"></pre>
+      </details>
+    </div>
+  </div>
+
+  <div class="card no-print">
+    <h2>➕ Registar produto</h2>
+    <form id="form">
+      <div class="grid">
+        <div><label for="data">Data</label><input type="date" id="data" required></div>
+        <div><label for="mercado">Mercado</label><input id="mercado" list="mercados" placeholder="Nome do mercado" required>
+          <datalist id="mercados"></datalist></div>
+        <div><label for="produto">Produto</label><input id="produto" list="produtos" placeholder="Arroz 5kg" required>
+          <datalist id="produtos"></datalist></div>
+        <div><label for="unidade">Unidade</label>
+          <select id="unidade"><option>un</option><option>kg</option><option>g</option><option>L</option><option>ml</option><option>pct</option></select></div>
+        <div><label for="qtd">Quantidade</label><input type="number" id="qtd" step="0.001" min="0.001" value="1" required></div>
+        <div><label for="preco">Preço unitário (R$)</label><input type="number" id="preco" step="0.01" min="0" placeholder="0,00" required></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button type="submit">Adicionar ao histórico</button>
+        <span class="muted" id="previa">Total: R$ 0,00</span>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>📊 Resumo calculado</h2>
+    <div class="tiles" id="tiles"></div>
+  </div>
+
+  <div class="card">
+    <h2>🏷️ Melhor preço por produto</h2>
+    <div class="scroll"><table id="tabMelhor">
+      <thead><tr><th>Produto</th><th>Melhor preço</th><th>Onde / quando</th>
+      <th class="num">Média</th><th class="num">Mais caro</th><th class="num">Diferença</th><th class="num">Registos</th></tr></thead>
+      <tbody></tbody></table></div>
+    <p class="empty" id="vazioMelhor">Sem registos ainda.</p>
+  </div>
+
+  <div class="card">
+    <h2>🏪 Gasto por mercado</h2>
+    <div class="scroll"><table id="tabMercado">
+      <thead><tr><th>Mercado</th><th class="num">Itens</th><th class="num">Total gasto</th><th style="width:40%">Peso</th></tr></thead>
+      <tbody></tbody></table></div>
+    <p class="empty" id="vazioMercado">Sem registos ainda.</p>
+  </div>
+
+  <div class="card">
+    <h2>📅 Gasto por mês</h2>
+    <div class="scroll"><table id="tabMes">
+      <thead><tr><th>Mês</th><th class="num">Itens</th><th class="num">Total</th><th class="num">Variação</th><th style="width:35%">Peso</th></tr></thead>
+      <tbody></tbody></table></div>
+    <p class="empty" id="vazioMes">Sem registos ainda.</p>
+  </div>
+
+  <div class="card">
+    <h2>🧾 Histórico de registos</h2>
+    <div class="row no-print" style="margin-bottom:10px">
+      <input id="busca" placeholder="Filtrar por produto ou mercado…" style="flex:1;min-width:180px">
+      <button class="ghost" onclick="exportarCSV()">Exportar CSV</button>
+      <label class="ghost" style="margin:0"><button type="button" class="ghost" onclick="document.getElementById('imp').click()">Importar CSV</button></label>
+      <input type="file" id="imp" accept=".csv,text/csv" hidden>
+      <button class="ghost" onclick="window.print()">Imprimir / PDF</button>
+      <button class="danger" onclick="limpar()">Limpar tudo</button>
+    </div>
+    <div class="scroll"><table id="tabHist">
+      <thead><tr><th>Data</th><th>Produto</th><th>Mercado</th><th class="num">Qtd</th>
+      <th class="num">Preço un.</th><th class="num">Total</th><th class="no-print"></th></tr></thead>
+      <tbody></tbody></table></div>
+    <p class="empty" id="vazioHist">Ainda não existem registos guardados.</p>
+    <p class="note no-print" style="margin-top:12px">Os dados ficam guardados apenas neste navegador (armazenamento local).
+    Use <strong>Exportar CSV</strong> para ter uma cópia de segurança.</p>
+  </div>
+
+</div>
+
+<script src="vendor/tesseract/tesseract.min.js"></script>
+<script>
+"use strict";
+const CHAVE = "acomp_precos_v1";
+const CHAVE_ANTIGA = "komprao_precos_v1";   // versões anteriores do app
+const $ = id => document.getElementById(id);
+let dados = [];
+
+/* ---------- armazenamento ---------- */
+function carregar(){
+  try{
+    const bruto = localStorage.getItem(CHAVE) ?? localStorage.getItem(CHAVE_ANTIGA);
+    dados = bruto ? JSON.parse(bruto) : [];
+    if(!Array.isArray(dados)) dados = [];
+  }catch(e){ dados = []; }
+}
+function salvar(){
+  try{ localStorage.setItem(CHAVE, JSON.stringify(dados)); }
+  catch(e){ alert("Não foi possível guardar neste navegador. Exporte o CSV para não perder os dados."); }
+}
+
+/* ---------- formatação ---------- */
+const brl = v => "R$ " + (Number(v)||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const num = (v,d=3) => (Number(v)||0).toLocaleString("pt-BR",{maximumFractionDigits:d});
+function dataBR(iso){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(iso||"")) return iso||"—";
+  const [a,m,d] = iso.split("-"); return `${d}/${m}/${a}`;
+}
+const pct = v => (v>=0?"+":"") + v.toLocaleString("pt-BR",{maximumFractionDigits:1}) + "%";
+// data de hoje no fuso local (toISOString usa UTC e, no Brasil, vira o dia seguinte após as 21h)
+function hoje(){
+  const d = new Date(), z = n => String(n).padStart(2,"0");
+  return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`;
+}
+
+/* ---------- cálculo ---------- */
+const total = r => (Number(r.qtd)||0) * (Number(r.preco)||0);
+
+function resumo(){
+  const geral = dados.reduce((s,r)=>s+total(r),0);
+  const meses = new Set(dados.map(r=>(r.data||"").slice(0,7)).filter(Boolean));
+  return {
+    registos: dados.length,
+    geral,
+    produtos: new Set(dados.map(r=>r.produto.toLowerCase())).size,
+    mercados: new Set(dados.map(r=>r.mercado.toLowerCase())).size,
+    ticket: dados.length ? geral/dados.length : 0,
+    mediaMes: meses.size ? geral/meses.size : 0
+  };
+}
+
+function agrupar(chave){
+  const mapa = new Map();
+  for(const r of dados){
+    const k = chave(r);
+    if(!mapa.has(k)) mapa.set(k, []);
+    mapa.get(k).push(r);
+  }
+  return mapa;
+}
+
+/* ---------- render ---------- */
+function render(){
+  const s = resumo();
+  $("tiles").innerHTML = [
+    ["Registos", s.registos],
+    ["Total gasto", brl(s.geral)],
+    ["Produtos distintos", s.produtos],
+    ["Mercados", s.mercados],
+    ["Média por item", brl(s.ticket)],
+    ["Média por mês", brl(s.mediaMes)]
+  ].map(([t,v])=>`<div class="tile"><span>${t}</span><strong>${v}</strong></div>`).join("");
+
+  renderMelhor(); renderMercado(); renderMes(); renderHist(); renderListas();
+}
+
+function renderMelhor(){
+  const corpo = $("tabMelhor").tBodies[0], linhas = [];
+  const mapa = agrupar(r => r.produto.trim().toLowerCase() + "|" + (r.unidade||"un"));
+  const chaves = [...mapa.keys()].sort((a,b)=>a.localeCompare(b,"pt-BR"));
+  for(const k of chaves){
+    const itens = mapa.get(k);
+    const precos = itens.map(r=>Number(r.preco)||0);
+    const min = Math.min(...precos), max = Math.max(...precos);
+    const media = precos.reduce((a,b)=>a+b,0)/precos.length;
+    const melhor = itens[precos.indexOf(min)];
+    const dif = min>0 ? (max-min)/min*100 : 0;
+    linhas.push(`<tr>
+      <td>${esc(melhor.produto)} <span class="pill">${esc(melhor.unidade||"un")}</span></td>
+      <td class="down"><strong>${brl(min)}</strong></td>
+      <td>${esc(melhor.mercado)} <span class="muted">· ${dataBR(melhor.data)}</span></td>
+      <td class="num">${brl(media)}</td>
+      <td class="num">${brl(max)}</td>
+      <td class="num ${dif>0?"up":""}">${dif>0?pct(dif):"—"}</td>
+      <td class="num">${itens.length}</td></tr>`);
+  }
+  corpo.innerHTML = linhas.join("");
+  alterna("tabMelhor","vazioMelhor",linhas.length);
+}
+
+function renderMercado(){
+  const corpo = $("tabMercado").tBodies[0], linhas = [];
+  const mapa = agrupar(r => r.mercado.trim());
+  const geral = dados.reduce((s,r)=>s+total(r),0);
+  const ord = [...mapa.entries()]
+    .map(([k,v])=>[k, v.length, v.reduce((s,r)=>s+total(r),0)])
+    .sort((a,b)=>b[2]-a[2]);
+  for(const [nome,n,soma] of ord){
+    const p = geral ? soma/geral*100 : 0;
+    linhas.push(`<tr><td>${esc(nome)}</td><td class="num">${n}</td><td class="num">${brl(soma)}</td>
+      <td><div class="bar" style="width:${p.toFixed(1)}%"></div>
+      <span class="muted">${p.toLocaleString("pt-BR",{maximumFractionDigits:1})}%</span></td></tr>`);
+  }
+  corpo.innerHTML = linhas.join("");
+  alterna("tabMercado","vazioMercado",linhas.length);
+}
+
+function renderMes(){
+  const corpo = $("tabMes").tBodies[0], linhas = [];
+  const mapa = agrupar(r => (r.data||"").slice(0,7) || "sem data");
+  const ord = [...mapa.entries()]
+    .map(([k,v])=>[k, v.length, v.reduce((s,r)=>s+total(r),0)])
+    .sort((a,b)=>a[0].localeCompare(b[0]));
+  const maior = Math.max(1, ...ord.map(o=>o[2]));
+  ord.forEach(([mes,n,soma],i)=>{
+    let varia = "—";
+    if(i>0){
+      const ant = ord[i-1][2];
+      if(ant>0){ const d=(soma-ant)/ant*100; varia = `<span class="${d>0?"up":"down"}">${pct(d)}</span>`; }
+    }
+    linhas.push(`<tr><td>${rotuloMes(mes)}</td><td class="num">${n}</td><td class="num">${brl(soma)}</td>
+      <td class="num">${varia}</td>
+      <td><div class="bar" style="width:${(soma/maior*100).toFixed(1)}%"></div></td></tr>`);
+  });
+  corpo.innerHTML = linhas.join("");
+  alterna("tabMes","vazioMes",linhas.length);
+}
+
+const MESES = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+function rotuloMes(m){
+  if(!/^\d{4}-\d{2}$/.test(m)) return "Sem data";
+  const [a,mm] = m.split("-");
+  return `${MESES[Number(mm)-1]}/${a}`;
+}
+
+function renderHist(){
+  const filtro = ($("busca").value||"").trim().toLowerCase();
+  const corpo = $("tabHist").tBodies[0], linhas = [];
+  dados.map((r,i)=>({r,i}))
+    .filter(({r}) => !filtro || (r.produto+" "+r.mercado).toLowerCase().includes(filtro))
+    .sort((a,b)=>(b.r.data||"").localeCompare(a.r.data||"") || b.i-a.i)
+    .forEach(({r,i})=>{
+      linhas.push(`<tr><td>${dataBR(r.data)}</td>
+        <td>${esc(r.produto)} <span class="pill">${esc(r.unidade||"un")}</span></td>
+        <td>${esc(r.mercado)}</td>
+        <td class="num">${num(r.qtd)}</td>
+        <td class="num">${brl(r.preco)}</td>
+        <td class="num"><strong>${brl(total(r))}</strong></td>
+        <td class="no-print"><button class="danger" onclick="remover(${i})">✕</button></td></tr>`);
+    });
+  corpo.innerHTML = linhas.join("");
+  alterna("tabHist","vazioHist",linhas.length);
+  $("vazioHist").textContent = dados.length ? "Nenhum registo corresponde ao filtro."
+                                            : "Ainda não existem registos guardados.";
+}
+
+function alterna(tab,vazio,n){
+  $(tab).style.display = n ? "" : "none";
+  $(vazio).style.display = n ? "none" : "";
+}
+
+function renderListas(){
+  $("produtos").innerHTML = [...new Set(dados.map(r=>r.produto))].sort()
+    .map(v=>`<option value="${esc(v)}">`).join("");
+  $("mercados").innerHTML = [...new Set(dados.map(r=>r.mercado))].sort()
+    .map(v=>`<option value="${esc(v)}">`).join("");
+}
+
+function esc(s){
+  return String(s??"").replace(/[&<>"']/g, c =>
+    ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+/* ---------- ações ---------- */
+$("form").addEventListener("submit", e => {
+  e.preventDefault();
+  const r = {
+    data: $("data").value,
+    mercado: $("mercado").value.trim(),
+    produto: $("produto").value.trim(),
+    unidade: $("unidade").value,
+    qtd: Number($("qtd").value),
+    preco: Number($("preco").value)
+  };
+  if(!r.produto || !r.mercado || !(r.qtd>0) || !(r.preco>=0)){
+    alert("Preencha produto, mercado, quantidade e preço."); return;
+  }
+  dados.push(r); salvar(); render();
+  $("produto").value = ""; $("qtd").value = "1"; $("preco").value = "";
+  atualizarPrevia(); $("produto").focus();
+});
+
+function atualizarPrevia(){
+  $("previa").textContent = "Total: " + brl((Number($("qtd").value)||0)*(Number($("preco").value)||0));
+}
+$("qtd").addEventListener("input", atualizarPrevia);
+$("preco").addEventListener("input", atualizarPrevia);
+$("busca").addEventListener("input", renderHist);
+
+function remover(i){
+  if(!confirm("Remover este registo?")) return;
+  dados.splice(i,1); salvar(); render();
+}
+function limpar(){
+  if(!dados.length) return;
+  if(!confirm("Apagar TODOS os registos? Esta ação não pode ser desfeita.")) return;
+  dados = []; salvar(); render();
+}
+
+/* ---------- CSV ---------- */
+function campoCSV(v){
+  const s = String(v??"");
+  return /[";\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+}
+function exportarCSV(){
+  if(!dados.length){ alert("Não há registos para exportar."); return; }
+  const linhas = [["Data","Produto","Unidade","Mercado","Quantidade","PrecoUnitario","Total"]
+    .join(";")];
+  for(const r of dados){
+    linhas.push([r.data,r.produto,r.unidade||"un",r.mercado,r.qtd,
+      Number(r.preco).toFixed(2), total(r).toFixed(2)].map(campoCSV).join(";"));
+  }
+  const blob = new Blob(["﻿"+linhas.join("\r\n")], {type:"text/csv;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "historico_precos.csv";
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+$("imp").addEventListener("change", ev => {
+  const f = ev.target.files[0]; if(!f) return;
+  const leitor = new FileReader();
+  leitor.onload = () => {
+    try{
+      const novos = lerCSV(String(leitor.result));
+      if(!novos.length){ alert("Nenhuma linha válida encontrada no CSV."); return; }
+      dados = dados.concat(novos); salvar(); render();
+      alert(novos.length + " registo(s) importado(s).");
+    }catch(e){ alert("Não foi possível ler o CSV: " + e.message); }
+    ev.target.value = "";
+  };
+  leitor.readAsText(f, "utf-8");
+});
+
+function lerCSV(texto){
+  const linhas = texto.replace(/^﻿/,"").split(/\r?\n/).filter(l=>l.trim());
+  if(!linhas.length) return [];
+  const sep = (linhas[0].match(/;/g)||[]).length >= (linhas[0].match(/,/g)||[]).length ? ";" : ",";
+  const cab = dividir(linhas[0],sep).map(c=>c.trim().toLowerCase());
+  const idx = n => cab.findIndex(c => c.startsWith(n));
+  const iD=idx("data"), iP=idx("produto"), iU=idx("unidade"),
+        iM=idx("mercado"), iQ=idx("quant"), iV=idx("preco");
+  if(iP<0 || iV<0) throw new Error("faltam as colunas Produto e PrecoUnitario.");
+  const saida = [];
+  for(let i=1;i<linhas.length;i++){
+    const c = dividir(linhas[i],sep);
+    const produto = (c[iP]||"").trim();
+    const preco = numeroBR(c[iV]);
+    if(!produto || !isFinite(preco)) continue;
+    saida.push({
+      data: normData(iD>=0?c[iD]:""),
+      produto,
+      unidade: (iU>=0 && c[iU]?.trim()) || "un",
+      mercado: (iM>=0 && c[iM]?.trim()) || "Não informado",
+      qtd: iQ>=0 ? (numeroBR(c[iQ])||1) : 1,
+      preco
+    });
+  }
+  return saida;
+}
+function dividir(linha,sep){
+  const out=[]; let atual="", dentro=false;
+  for(let i=0;i<linha.length;i++){
+    const ch = linha[i];
+    if(ch === '"'){
+      if(dentro && linha[i+1] === '"'){ atual+='"'; i++; } else dentro = !dentro;
+    } else if(ch === sep && !dentro){ out.push(atual); atual=""; }
+    else atual += ch;
+  }
+  out.push(atual); return out;
+}
+function numeroBR(v){
+  let s = String(v??"").replace(/[^\d,.\-]/g,"").trim();
+  if(!s) return NaN;
+  if(s.includes(",") && s.includes(".")) s = s.replace(/\./g,"").replace(",",".");
+  else if(s.includes(",")) s = s.replace(",",".");
+  return parseFloat(s);
+}
+function normData(v){
+  const s = String(v??"").trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const m = s.match(/^(\d{2})[\/-](\d{2})[\/-](\d{4})$/);
+  if(m) return `${m[3]}-${m[2]}-${m[1]}`;
+  return hoje();
+}
+
+/* =======================================================================
+   OCR offline — Tesseract (WebAssembly) executado no próprio navegador.
+   Nenhum pedido de rede, nenhuma API, nenhum token.
+   ======================================================================= */
+const OCR = {
+  workerPath: "vendor/tesseract/worker.min.js",
+  corePath:   "vendor/tesseract/",
+  langPath:   "vendor/tesseract/lang"
+};
+let imagemOrig = null, rotacao = 0, itensLidos = [], totalTalao = null;
+
+if(location.protocol === "file:"){
+  const av = $("avisoProtocolo");
+  av.style.display = "";
+  av.innerHTML = "A leitura de imagem precisa que a página seja servida por um endereço local " +
+    "(os navegadores não permitem <em>workers</em> a partir de <code>file://</code>). " +
+    "Execute <code>iniciar.bat</code> na pasta do projeto e abra " +
+    "<code>http://localhost:8000</code>. O registo manual e os cálculos funcionam normalmente aqui.";
+  $("btnLer").title = "Disponível ao abrir via http://localhost";
+}
+
+$("foto").addEventListener("change", ev => {
+  const f = ev.target.files[0];
+  if(!f) return;
+  const img = new Image();
+  img.onload = () => {
+    imagemOrig = img; rotacao = 0;
+    desenhar();
+    $("tela").style.display = ""; $("btnGirar").style.display = "";
+    $("btnLer").disabled = location.protocol === "file:";
+    $("estadoOCR").textContent = "Imagem carregada (" + img.naturalWidth + "×" + img.naturalHeight + ").";
+  };
+  img.onerror = () => alert("Não foi possível abrir esta imagem.");
+  img.src = URL.createObjectURL(f);
+});
+
+$("btnGirar").addEventListener("click", () => { rotacao = (rotacao + 90) % 360; desenhar(); });
+
+/* Pré-processamento: escala, tons de cinza e aumento de contraste.
+   Melhora bastante a leitura de talões impressos em papel térmico. */
+function desenhar(){
+  const tela = $("tela"), ctx = tela.getContext("2d");
+  const w = imagemOrig.naturalWidth, h = imagemOrig.naturalHeight;
+  const escala = Math.min(2, Math.max(1, 1600 / Math.max(w, h)));
+  const vertical = rotacao % 180 === 0;
+  tela.width  = Math.round((vertical ? w : h) * escala);
+  tela.height = Math.round((vertical ? h : w) * escala);
+  ctx.save();
+  ctx.translate(tela.width/2, tela.height/2);
+  ctx.rotate(rotacao * Math.PI / 180);
+  ctx.drawImage(imagemOrig, -w*escala/2, -h*escala/2, w*escala, h*escala);
+  ctx.restore();
+
+  const dados = ctx.getImageData(0,0,tela.width,tela.height);
+  const p = dados.data;
+  let soma = 0;
+  for(let i=0;i<p.length;i+=4){
+    const g = 0.299*p[i] + 0.587*p[i+1] + 0.114*p[i+2];
+    p[i]=p[i+1]=p[i+2]=g; soma += g;
+  }
+  const media = soma / (p.length/4);
+  const ganho = 1.6;
+  for(let i=0;i<p.length;i+=4){
+    const v = Math.max(0, Math.min(255, (p[i]-media)*ganho + media));
+    p[i]=p[i+1]=p[i+2]=v;
+  }
+  ctx.putImageData(dados,0,0);
+}
+
+$("btnLer").addEventListener("click", async () => {
+  if(!imagemOrig) return;
+  const btn = $("btnLer");
+  btn.disabled = true;
+  $("progresso").style.display = "";
+  $("estadoOCR").textContent = "A preparar o motor de leitura…";
+  let worker;
+  try{
+    worker = await Tesseract.createWorker("por", 1, {
+      workerPath: OCR.workerPath,
+      corePath: OCR.corePath,
+      langPath: OCR.langPath,
+      gzip: true,
+      logger: m => {
+        if(typeof m.progress === "number"){
+          $("barraOCR").style.width = Math.round(m.progress*100) + "%";
+        }
+        const rot = {loading_tesseract_core:"a carregar o motor",initializing_tesseract:"a iniciar",
+                     loading_language_traineddata:"a carregar o português",initializing_api:"a preparar",
+                     recognizing_text:"a reconhecer o texto"}[m.status];
+        if(rot) $("estadoOCR").textContent = rot + "…";
+      }
+    });
+    await worker.setParameters({ preserve_interword_spaces: "1" });
+    const { data } = await worker.recognize($("tela"));
+    $("textoBruto").textContent = data.text;
+    itensLidos = interpretar(data.text);
+    const cab = cabecalho(data.text);
+    if(cab.data) $("dataOCR").value = cab.data;
+    if(cab.mercado) $("mercadoOCR").value = cab.mercado;
+    totalTalao = isFinite(cab.total) ? cab.total : null;
+    renderRevisao();
+    $("estadoOCR").textContent = itensLidos.length
+      ? itensLidos.length + " item(ns) detetado(s). Revise antes de importar."
+      : "Nenhum item reconhecido automaticamente — use “Adicionar linha vazia” ou o registo manual.";
+    $("revisao").style.display = "";
+  }catch(e){
+    $("estadoOCR").textContent = "";
+    alert("Falha na leitura da imagem: " + (e && e.message ? e.message : e));
+  }finally{
+    if(worker) { try{ await worker.terminate(); }catch(e){} }
+    $("progresso").style.display = "none";
+    btn.disabled = false;
+  }
+});
+
+/* ---------- interpretação do texto do talão (regras, não IA) ---------- */
+// Linhas com valor que NÃO são item. Ficaram de fora palavras que aparecem em
+// nomes de produto ("caixa", "chave", "item"…), que descartavam itens válidos.
+const RUIDO = /\b(total|subtotal|sub-total|troco|dinheiro|cart[aã]o|d[eé]bito|cr[eé]dito|pix|desconto|acr[eé]scimo|tributos?|lei|cnpj|cpf|cupom|fiscal|sat|nfc|consumidor|operador|qtd\.? total|valor pago|obrigad|volte sempre|raz[aã]o social|rua|avenida|av(?=\.)|bairro|cep)\b/i;
+// No cabeçalho (nome do mercado) também se ignoram linhas de caixa, endereço, etc.
+const RUIDO_CAB = /\b(caixa|item|itens|chave|acesso|insc|end|tel|documento|auxiliar|eletr[oô]nic)/i;
+const MOEDA = /(\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2}|\d+\.\d{2})/g;
+const TEM_MOEDA = /(\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2}|\d+\.\d{2})/;   // sem /g: seguro para .test()
+const UNIDADES = "un|und|kg|g|l|lt|ml|pc|pct|cx";
+
+function interpretar(texto){
+  const saida = [];
+  for(const bruta of texto.split(/\r?\n/)){
+    const linha = bruta.replace(/\s+/g," ").trim();
+    if(linha.length < 5 || RUIDO.test(linha)) continue;
+    const valores = linha.match(MOEDA);
+    if(!valores) continue;
+
+    let qtd = 1, preco = null, aviso = "", unidade = "un";
+    // padrão "2 x 24,90" / "2 UN X 24,90" / "1,500 kg x 12,90"
+    const mult = linha.match(new RegExp("(\\d+(?:[.,]\\d+)?)\\s*(" + UNIDADES + ")?\\.?\\s*[xX*]\\s*(\\d{1,3}(?:\\.\\d{3})*,\\d{2}|\\d+[.,]\\d{2})", "i"));
+    if(mult){
+      qtd = numeroBR(mult[1]) || 1;
+      preco = numeroBR(mult[3]);
+      // a unidade de venda é a que vem colada à quantidade ("1,250 KG X"),
+      // não um "5 KG" que faz parte do nome do produto
+      if(mult[2]) unidade = normUnidade(mult[2]);
+      // Conferência aritmética: numa linha "qtd X unitário  total", os três
+      // valores têm de fechar. Se não fecham, o OCR errou um dígito — e o
+      // total dividido pela quantidade recupera o preço unitário correto.
+      const somaLinha = numeroBR(valores[valores.length-1]);
+      if(valores.length >= 2 && isFinite(somaLinha) && somaLinha > 0){
+        const esperado = qtd * preco;
+        if(Math.abs(esperado - somaLinha) > Math.max(0.02, somaLinha*0.01)){
+          const derivado = somaLinha / qtd;
+          if(derivado > 0 && derivado < 100000){
+            preco = Math.round(derivado*100)/100;
+            aviso = "preço corrigido pelo total da linha";
+          }else{
+            aviso = "conferir: qtd × preço não fecha com o total";
+          }
+        }
+      }
+    }else{
+      // sem multiplicação: o último valor da linha é o preço do item
+      preco = numeroBR(valores[valores.length-1]);
+    }
+    if(!isFinite(preco) || preco <= 0 || preco > 100000) continue;
+
+    // nome = texto antes do primeiro número monetário, sem códigos iniciais
+    let nome = linha.slice(0, linha.indexOf(valores[0]))
+      .replace(/[xX*]\s*$/,"")
+      .replace(/^\s*\d{1,3}[\s.)-]+/,"")        // "001 " / "1) "
+      .replace(/\b\d{6,}\b/g,"")                 // códigos de barras
+      .replace(new RegExp("\\b(" + UNIDADES + ")\\b\\.?\\s*$", "i"),"")
+      .replace(/[|_]+/g," ")
+      .replace(/\s{2,}/g," ").trim();
+    if(mult) nome = nome.replace(/(\d+(?:[.,]\d+)?)\s*$/,"").trim();
+    if(nome.replace(/[^A-Za-zÀ-ÿ]/g,"").length < 3) continue;
+
+    saida.push({ produto: titulo(nome), qtd, preco, aviso, unidade, linha });
+  }
+  return saida;
+}
+
+function normUnidade(u){
+  u = u.toLowerCase();
+  return ({und:"un", lt:"L", l:"L", pc:"un", cx:"un"})[u] || u;
+}
+
+function cabecalho(texto){
+  const out = {};
+  // "TOTAL" seguido do valor na mesma linha (talões alinham com muitos espaços)
+  const linhaTotal = texto.split(/\r?\n/).find(l => /^\s*(?:valor\s+)?total\b/i.test(l) && TEM_MOEDA.test(l));
+  const t = linhaTotal && linhaTotal.match(/(\d{1,3}(?:\.\d{3})*,\d{2}|\d+[.,]\d{2})\s*$/);
+  if(t) out.total = numeroBR(t[1]);
+  const d = texto.match(/(\d{2})[\/.-](\d{2})[\/.-](\d{4})/);
+  if(d) out.data = `${d[3]}-${d[2]}-${d[1]}`;
+  for(const l of texto.split(/\r?\n/).slice(0,6)){
+    const t = l.replace(/\s+/g," ").trim();
+    if(t.length >= 4 && /^[A-ZÀ-Ý0-9 .&'-]+$/.test(t) && !/^\d+$/.test(t) && !RUIDO.test(t) && !RUIDO_CAB.test(t)){
+      out.mercado = titulo(t); break;
+    }
+  }
+  return out;
+}
+
+function titulo(s){
+  return s.toLowerCase().replace(/\b[\wÀ-ÿ]/g, c => c.toUpperCase());
+}
+
+/* ---------- tabela de revisão ---------- */
+function conferir(){
+  const el = $("conferencia");
+  const soma = itensLidos.filter(it=>!it.ignorar).reduce((s,it)=>s+(Number(it.qtd)||0)*(Number(it.preco)||0),0);
+  if(totalTalao == null){
+    el.innerHTML = `<span class="muted">Soma dos itens selecionados: <strong>${brl(soma)}</strong>
+      · nenhum total encontrado no talão para comparar.</span>`;
+    return;
+  }
+  const dif = soma - totalTalao;
+  const ok = Math.abs(dif) <= Math.max(0.05, totalTalao*0.005);
+  el.innerHTML = ok
+    ? `<div class="note" style="background:var(--brand-soft);color:var(--brand)">✔ Conferido: a soma dos itens
+       (<strong>${brl(soma)}</strong>) fecha com o TOTAL do talão (${brl(totalTalao)}).</div>`
+    : `<div class="note">⚠ A soma dos itens (<strong>${brl(soma)}</strong>) difere do TOTAL do talão
+       (${brl(totalTalao)}) em <strong>${brl(Math.abs(dif))}</strong>. Verifique as linhas assinaladas
+       — pode faltar um item ou um dígito foi lido a mais.</div>`;
+}
+
+function renderRevisao(){
+  $("tabRevisao").tBodies[0].innerHTML = itensLidos.map((it,i)=>`<tr>
+    <td><input type="checkbox" data-i="${i}" class="usar" ${it.ignorar?"":"checked"} style="width:auto"></td>
+    <td><input class="ed" data-i="${i}" data-c="produto" value="${esc(it.produto)}"></td>
+    <td><input class="ed" data-i="${i}" data-c="qtd" type="number" step="0.001" min="0.001" value="${it.qtd}"></td>
+    <td><input class="ed" data-i="${i}" data-c="preco" type="number" step="0.01" min="0" value="${Number(it.preco).toFixed(2)}"></td>
+    <td class="num">${brl(it.qtd*it.preco)}</td>
+    <td style="font-size:12px" class="muted">${esc(it.linha||"")}
+      ${it.aviso?`<br><span class="pill" style="color:var(--warn);border-color:var(--warn)">⚠ ${esc(it.aviso)}</span>`:""}</td></tr>`).join("");
+  conferir();
+
+  $("tabRevisao").querySelectorAll(".ed").forEach(inp => {
+    inp.addEventListener("input", () => {
+      const it = itensLidos[Number(inp.dataset.i)], c = inp.dataset.c;
+      it[c] = c === "produto" ? inp.value : Number(inp.value);
+      if(c !== "produto"){
+        inp.closest("tr").cells[4].textContent = brl((Number(it.qtd)||0)*(Number(it.preco)||0));
+      }
+      conferir();
+    });
+  });
+  $("tabRevisao").querySelectorAll(".usar").forEach(chk => {
+    chk.addEventListener("change", () => { itensLidos[Number(chk.dataset.i)].ignorar = !chk.checked; });
+  });
+}
+
+$("btnLinha").addEventListener("click", () => {
+  itensLidos.push({produto:"", qtd:1, preco:0, unidade:"un", linha:"(manual)"});
+  renderRevisao();
+});
+
+$("btnDescartar").addEventListener("click", () => {
+  itensLidos = []; $("revisao").style.display = "none"; $("estadoOCR").textContent = "";
+});
+
+$("btnConfirmar").addEventListener("click", () => {
+  const data = $("dataOCR").value || hoje();
+  const mercado = $("mercadoOCR").value.trim();
+  if(!mercado){ alert("Informe o mercado destes itens."); $("mercadoOCR").focus(); return; }
+  const bons = itensLidos.filter(it => !it.ignorar && it.produto.trim() && it.qtd > 0 && it.preco >= 0);
+  if(!bons.length){ alert("Nenhum item válido selecionado."); return; }
+  for(const it of bons){
+    dados.push({ data, mercado, produto: it.produto.trim(),
+                 unidade: it.unidade || "un", qtd: Number(it.qtd), preco: Number(it.preco) });
+  }
+  salvar(); render();
+  itensLidos = []; $("revisao").style.display = "none";
+  $("estadoOCR").textContent = bons.length + " item(ns) importado(s) para o histórico.";
+});
+
+/* ---------- início ---------- */
+$("data").value = $("dataOCR").value = hoje();
+carregar(); render(); atualizarPrevia();
+// sugere o último mercado usado
+if(dados.length) $("mercado").value = $("mercadoOCR").value = dados[dados.length-1].mercado || "";
+
+/* =======================================================================
+   Licença por aparelho.
+   Cada aparelho gera um código aleatório. O vendedor assina esse código com a
+   chave PRIVADA (que só ele tem, no gerador de chaves) e o app confere a
+   assinatura com a chave PÚBLICA abaixo. Sem a chave privada não é possível
+   criar uma chave válida, e a chave de um aparelho não serve noutro.
+   ======================================================================= */
+// Contato do vendedor mostrado na tela de ativação.
+const CONTATO_VENDA = "WhatsApp do vendedor: (47) 99121-1229";
+const WHATSAPP_VENDA = "5547991211229";   // com 55 + DDD, só números
+const CHAVE_PUBLICA = {"kty":"EC","crv":"P-256",
+  "x":"Kvc1zvbbNdlWZJK4EsHvvCEHY8fi0vnSQvdGPeMMArU","y":"qqiSVXMytZkU1KITQ5mJDRYX6rzgpAelCHRIv_PLjFQ"};
+const CHAVE_APARELHO = "acomp_aparelho", CHAVE_LICENCA = "acomp_licenca";
+const B32 = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";   // sem I, L, O, U (evita confusão ao digitar)
+
+function codigoAparelho(){
+  let c = null;
+  try{ c = localStorage.getItem(CHAVE_APARELHO); }catch(e){}
+  if(!/^[0-9A-Z]{16}$/.test(c||"")){
+    const b = crypto.getRandomValues(new Uint8Array(16));
+    c = Array.from(b, x => B32[x & 31]).join("");
+    try{ localStorage.setItem(CHAVE_APARELHO, c); }catch(e){}
+  }
+  return c;
+}
+const formatarCodigo = c => c.match(/.{4}/g).join("-");
+const normCodigo = s => String(s||"").toUpperCase().replace(/[^0-9A-Z]/g,"");
+
+function b64url(s){
+  s = s.replace(/-/g,"+").replace(/_/g,"/");
+  return Uint8Array.from(atob(s + "===".slice((s.length+3)%4)), ch => ch.charCodeAt(0));
+}
+
+// Devolve os dados da licença se a chave for válida para este aparelho; senão lança erro.
+async function verificarLicenca(chave, aparelho){
+  chave = String(chave||"").replace(/\s+/g,"");
+  const partes = chave.split(".");
+  if(partes.length !== 3 || partes[0] !== "AP1") throw new Error("Chave incompleta ou com formato errado. Copie e cole a chave inteira.");
+  if(!(window.crypto && crypto.subtle)) throw new Error("Este navegador não permite verificar a chave neste endereço. Abra o app pelo endereço https oficial.");
+  const pub = await crypto.subtle.importKey("jwk", CHAVE_PUBLICA, {name:"ECDSA", namedCurve:"P-256"}, false, ["verify"]);
+  let ok = false, dadosLic = null;
+  try{
+    ok = await crypto.subtle.verify({name:"ECDSA", hash:"SHA-256"}, pub, b64url(partes[2]),
+                                    new TextEncoder().encode(partes[0] + "." + partes[1]));
+    dadosLic = JSON.parse(new TextDecoder().decode(b64url(partes[1])));
+  }catch(e){ ok = false; }
+  if(!ok || !dadosLic) throw new Error("Chave inválida. Confira se copiou a chave inteira, sem cortar nenhuma parte.");
+  if(normCodigo(dadosLic.d) !== aparelho) throw new Error("Esta chave foi gerada para outro aparelho. Envie o código mostrado acima ao vendedor.");
+  return dadosLic;
+}
+
+function liberar(lic){
+  document.body.classList.remove("bloqueado");
+  $("licenciadoPara").textContent = lic.n ? " · Licenciado para " + lic.n : "";
+}
+
+async function iniciarLicenca(){
+  const aparelho = codigoAparelho();
+  $("codAparelho").textContent = formatarCodigo(aparelho);
+  $("contatoVenda").textContent = CONTATO_VENDA;
+  $("btnWhats").href = "https://wa.me/" + WHATSAPP_VENDA + "?text=" + encodeURIComponent(
+    "Olá! Quero ativar o Acompanhamento de Preços. Código do aparelho: " + formatarCodigo(aparelho));
+  let salva = null;
+  try{ salva = localStorage.getItem(CHAVE_LICENCA); }catch(e){}
+  if(salva){
+    try{ liberar(await verificarLicenca(salva, aparelho)); return; }catch(e){}
+  }
+  $("btnCopiarCod").onclick = async () => {
+    try{ await navigator.clipboard.writeText(formatarCodigo(aparelho)); $("copiado").textContent = "Copiado!"; }
+    catch(e){ $("copiado").textContent = "Selecione o código e copie manualmente."; }
+  };
+  $("btnAtivar").onclick = async () => {
+    const chave = $("chaveLicenca").value, erro = $("erroLicenca");
+    erro.style.display = "none";
+    try{
+      const lic = await verificarLicenca(chave, aparelho);
+      try{ localStorage.setItem(CHAVE_LICENCA, chave.replace(/\s+/g,"")); }catch(e){}
+      if(navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(()=>{});
+      liberar(lic);
+    }catch(e){
+      erro.textContent = e.message; erro.style.display = "block";
+    }
+  };
+}
+iniciarLicenca();
+
+/* app instalável: guarda os arquivos no aparelho para abrir sem internet */
+if("serviceWorker" in navigator && location.protocol !== "file:"){
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
+}
+</script>
+</body>
+</html>
