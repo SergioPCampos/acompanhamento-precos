@@ -54,6 +54,10 @@
   .pill{display:inline-block;padding:1px 7px;border:1px solid var(--line);
         border-radius:99px;font-size:.75rem;color:var(--muted)}
   td.num, .tile strong{white-space:nowrap}
+  .meta{display:block;min-width:130px;text-align:right;font-size:.85rem;white-space:nowrap}
+  .meta-trilho{height:8px;background:var(--line);border-radius:5px;overflow:hidden;margin-top:4px}
+  .meta-trilho div{height:100%;border-radius:5px}
+  .alerta-meta{border-radius:8px;padding:9px 11px;font-size:.9rem;margin-bottom:8px}
   /* celular: tabelas viram cartões (um por linha), com o rótulo de cada valor ao lado */
   @media (max-width:640px){
     .tiles{grid-template-columns:1fr 1fr}
@@ -67,7 +71,7 @@
     table.cartoes td::before{content:attr(data-l);color:var(--muted);font-size:.8rem;text-align:left;white-space:nowrap}
     table.cartoes td.titulo{order:-1;display:block;text-align:left;font-weight:600;font-size:1rem;padding-bottom:6px}
     table.cartoes td.titulo::before{content:none}
-    table.cartoes td .bar{flex:1;max-width:55%}
+    table.cartoes td .trilho{flex:1;max-width:55%}
     table.cartoes td input:not([type=checkbox]){max-width:58%}
     table.cartoes td.titulo input{max-width:100%}
   }
@@ -185,7 +189,7 @@
         <div><label for="dataOCR">Data da compra</label><input type="date" id="dataOCR"></div>
       </div>
       <div class="scroll"><table id="tabRevisao">
-        <thead><tr><th>Usar</th><th>Produto</th><th>Embalagem</th><th class="num">Qtd</th><th class="num">Preço un. (R$)</th><th class="num">Total</th><th>Linha lida</th></tr></thead>
+        <thead><tr><th>Usar</th><th>Produto</th><th>Embalagem</th><th>Categoria</th><th class="num">Qtd</th><th class="num">Preço un. (R$)</th><th class="num">Total</th><th>Linha lida</th></tr></thead>
         <tbody></tbody></table></div>
       <div id="conferencia" style="margin-top:10px"></div>
       <div class="row" style="margin-top:12px">
@@ -211,6 +215,7 @@
         <div><label for="unidade">Unidade</label>
           <select id="unidade"><option>un</option><option>kg</option><option>g</option><option>L</option><option>ml</option><option>pct</option></select></div>
         <div><label for="embalagem">Embalagem (para comparar)</label><input id="embalagem" placeholder="ex.: 5 kg, 2 L, 30 un"></div>
+        <div><label for="categoria">Categoria</label><select id="categoria"></select></div>
         <div><label for="qtd">Quantidade</label><input type="number" id="qtd" step="0.001" min="0.001" value="1" required></div>
         <div><label for="preco">Preço unitário (R$)</label><input type="number" id="preco" step="0.01" min="0" placeholder="0,00" required></div>
       </div>
@@ -224,6 +229,33 @@
   <div class="card">
     <h2>📊 Resumo calculado</h2>
     <div class="tiles" id="tiles"></div>
+  </div>
+
+  <div class="card">
+    <h2>🧺 Gasto por categoria</h2>
+    <div class="row no-print" style="margin:-4px 0 10px">
+      <label for="mesCat" style="margin:0">Mês</label>
+      <select id="mesCat" style="width:auto;min-width:150px"></select>
+      <button type="button" class="ghost" id="btnMetas">🎯 Definir metas</button>
+    </div>
+    <div id="painelMetas" class="no-print" style="display:none;border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px">
+      <h3 style="font-size:.98rem;margin:0 0 4px">🎯 Meta de gasto por mês</h3>
+      <p class="muted" style="font-size:.82rem;margin:0 0 10px">Quanto você quer gastar, no máximo, em cada categoria por mês.
+        Deixe em branco para não ter meta. Entre parênteses, a sua média mensal até agora.</p>
+      <div class="grid" id="camposMetas"></div>
+      <div class="row" style="margin-top:12px">
+        <button type="button" id="btnSalvarMetas">Salvar metas</button>
+        <button type="button" class="ghost" id="btnFecharMetas">Cancelar</button>
+      </div>
+    </div>
+    <div id="vila"></div>
+    <div class="scroll"><table id="tabCat">
+      <thead><tr><th>Categoria</th><th class="num">Itens</th><th class="num">Total</th><th class="num">% do mês</th>
+      <th class="num">vs. mês anterior</th><th>Meta do mês</th><th style="width:22%">Peso</th></tr></thead>
+      <tbody></tbody></table></div>
+    <p class="empty" id="vazioCat">Sem registros ainda.</p>
+    <p class="muted no-print" style="font-size:.8rem;margin:8px 0 0">A categoria de cada produto é escolhida sozinha pelo nome.
+      Para corrigir, troque a categoria no <strong>Histórico de compras</strong>: o app aprende e aplica a todas as compras daquele produto.</p>
   </div>
 
   <div class="card">
@@ -262,7 +294,7 @@
       <button class="danger" onclick="limpar()">Limpar tudo</button>
     </div>
     <div class="scroll"><table id="tabHist">
-      <thead><tr><th>Data</th><th>Produto</th><th>Mercado</th><th class="num">Qtd</th>
+      <thead><tr><th>Data</th><th>Produto</th><th>Categoria</th><th>Mercado</th><th class="num">Qtd</th>
       <th class="num">Preço un.</th><th class="num">Total</th><th class="no-print"></th></tr></thead>
       <tbody></tbody></table></div>
     <p class="empty" id="vazioHist">Ainda não há registros salvos.</p>
@@ -373,6 +405,47 @@ function nomeBase(p){
     .replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
 }
 
+/* ---------- categorias ----------
+   Classifica cada produto pelo nome (inclui abreviações comuns nos cupons).
+   A ordem importa: regras mais específicas antes ("creme dental" é higiene,
+   "creme de leite" é laticínio, "água sanitária" é limpeza, "água" é bebida). */
+const CATEGORIAS = [
+  ["papeis",    "🧻", "Papéis",              "papel|guardanapo|lenco de papel|toalha de papel|filtro de papel|filtro cafe|papel toalha"],
+  ["limpeza",   "🧽", "Limpeza",             "agua sanitaria|sanitaria|alvejante|cloro|detergente|det|sabao|lava roupa|lava roupas|lava loucas?|amaciante|amac|desinfetante|multiuso|multi uso|limpador|limp|lustra moveis|esponja|saco lixo|saco de lixo|sacos? p lixo|vassoura|rodo|pano de chao|pano|flanela|inseticida|repelente|tira manchas|limpa vidros?|cif|veja|pinho sol|omo|ype|desengordurante|odorizador|bom ar|naftalina|palha de aco|bombril|luva"],
+  ["higiene",   "🧴", "Higiene",             "sabonete|sab|sabon|shampoo|sh|xampu|condicionador|cond|creme dental|cr dental|cr dent|pasta de dente|escova dental|escova de dente|esc dental|fio dental|enxaguante|antisseptico|desodorante|desod|deo|absorvente|abs|fralda|fraldas|lenco umedecido|aparelho de barbear|aparelho barbear|barbear|lamina|algodao|cotonete|hastes|hidratante|protetor solar|creme corporal|locao|talco|colgate|sorriso|oral b|dove|rexona|nivea|gillette|intimo|cotonetes"],
+  ["laticinios","🧀", "Laticínios e frios",  "leite|lte|iogurte|iog|bebida lactea|beb lactea|queijo|qjo|mussarela|mucarela|parmesao|ricota|requeijao|req|manteiga|mant|margarina|marg|creme de leite|creme leite|cr leite|nata|leite condensado|presunto|pres|apresuntado|mortadela|mort|salame|peito de peru|blanquet|danone|petit suisse|coalhada|kefir|chantilly"],
+  ["carnes",    "🥩", "Carnes e proteínas",  "carne|cne|bovina|bov|moida|patinho|alcatra|picanha|maminha|fraldinha|contra file|contrafile|file|acem|musculo|cupim|costela|coxao|lagarto|paleta|figado|frango|fgo|frgo|peito|coxa|sobrecoxa|asa|asinha|coracao de frango|linguica|ling|salsicha|sals|bacon|toucinho|porco|suino|suina|lombo|pernil|bisteca|panceta|peixe|tilapia|salmao|merluza|pescada|sardinha|atum|camarao|bacalhau|ovo|ovos|hamburguer|hamb|nuggets|empanado|kibe|almondega|calabresa|charque|carne seca|jerked"],
+  ["bebidas",   "🥤", "Bebidas",             "refri|refrig|refrigerante|coca|guarana|fanta|sprite|pepsi|suco|nectar|agua|agua mineral|cerveja|cerv|chopp|vinho|espumante|vodka|whisky|cachaca|gin|rum|licor|energetico|isotonico|gatorade|cha|mate|matte|terere|kombucha|refresco|tang"],
+  ["mercearia", "🥫", "Mercearia",           "molho|extrato|catchup|ketchup|maionese|mostarda|polpa|cafe|nescafe|capsula|acucar|acuc|adocante|sal|oleo|azeite|vinagre|tempero|caldo|sazon|fermento|gelatina|pudim|biscoito|bisc|bolacha|wafer|cookie|torrada|chocolate|choc|achocolatado|achoc|nescau|toddy|bombom|bala|chiclete|doce|geleia|mel|pipoca|salgadinho|snack|amendoim|castanha|pao|paes|bisnaguinha|bolo|enlatado|lata|milho verde|ervilha|seleta|palmito|azeitona|conserva|leite de coco|coco ralado|farofa|creme de avela|nutella|batata palha|sopa|miojo|lamen|instantaneo"],
+  ["frutas",    "🍎", "Frutas",              "banana|bana|maca|laranja|limao|mamao|papaia|formosa|melancia|melao|abacaxi|uva|manga|morango|pera|kiwi|bergamota|tangerina|mexerica|ponkan|goiaba|maracuja|abacate|ameixa|caqui|pessego|nectarina|coco|figo|jabuticaba|acerola|carambola|lichia|pitaya|framboesa|mirtilo"],
+  ["verduras",  "🥬", "Verduras e legumes",  "alface|rucula|agriao|couve|repolho|brocolis|couve flor|espinafre|acelga|cebola|alho|batata|batata doce|tomate|cenoura|pepino|pimentao|abobrinha|abobora|berinjela|beterraba|chuchu|mandioca|aipim|macaxeira|inhame|cara|cheiro verde|salsa|salsinha|cebolinha|coentro|manjericao|hortela|quiabo|vagem|jilo|gengibre|rabanete|alho poro|milho|cogumelo|champignon|maxixe"],
+  ["cereais",   "🌾", "Cereais e grãos",     "arroz|arr|feijao|feij|fj|lentilha|grao de bico|ervilha seca|aveia|granola|farinha|far|fuba|amido|maizena|macarrao|mac|massa|espaguete|talharim|parafuso|penne|lasanha|cereal|sucrilhos|corn flakes|quinoa|trigo|flocos|floc|tapioca|polvilho|cuscuz|canjica|chia|linhaca|semolina"],
+  ["outros",    "📦", "Outros",              ""],
+].map(([id, ic, nome, pal]) => ({ id, ic, nome, rx: pal ? new RegExp("(^| )(" + pal + ")( |$)") : null }));
+const CAT = Object.fromEntries(CATEGORIAS.map(c => [c.id, c]));
+const CHAVE_CATEG = "acomp_categorias";       // correções do usuário: nome do produto → categoria
+let catAprendidas = {};
+try{ catAprendidas = JSON.parse(localStorage.getItem(CHAVE_CATEG)) || {}; }catch(e){}
+
+function categoriaAuto(produto){
+  const t = " " + semAcento(produto).toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim() + " ";
+  for(const c of CATEGORIAS) if(c.rx && c.rx.test(t)) return c.id;
+  return "outros";
+}
+function categoriaDe(r){
+  const aprendida = catAprendidas[nomeBase(r.produto)];
+  return (r.categoria && CAT[r.categoria] && r.categoria) || (aprendida && CAT[aprendida] && aprendida) || categoriaAuto(r.produto);
+}
+// Correção do usuário: vale para este produto em todas as compras (antigas e futuras).
+function definirCategoria(produto, cat){
+  const nb = nomeBase(produto);
+  catAprendidas[nb] = cat;
+  try{ localStorage.setItem(CHAVE_CATEG, JSON.stringify(catAprendidas)); }catch(e){}
+  for(const r of dados) if(nomeBase(r.produto) === nb) r.categoria = cat;
+  salvar(); render();
+}
+const opcoesCategoria = sel => CATEGORIAS.map(c => `<option value="${c.id}" ${c.id === sel ? "selected" : ""}>${c.ic} ${c.nome}</option>`).join("");
+
 function resumo(){
   const geral = dados.reduce((s,r)=>s+total(r),0);
   const meses = new Set(dados.map(r=>(r.data||"").slice(0,7)).filter(Boolean));
@@ -408,8 +481,114 @@ function render(){
     ["Média por mês", brl(s.mediaMes)]
   ].map(([t,v])=>`<div class="tile"><span>${t}</span><strong>${v}</strong></div>`).join("");
 
-  renderMelhor(); renderMercado(); renderMes(); renderHist(); renderListas();
+  renderCategorias(); renderMelhor(); renderMercado(); renderMes(); renderHist(); renderListas();
 }
+
+// Gasto por categoria no mês escolhido, com a "vilã" (a que mais pesou) e a variação.
+function renderCategorias(){
+  const meses = [...new Set(dados.map(r => (r.data||"").slice(0,7)).filter(m => /^\d{4}-\d{2}$/.test(m)))].sort();
+  const sel = $("mesCat"), escolhido = sel.value;
+  sel.innerHTML = meses.slice().reverse().map(m => `<option value="${m}">${rotuloMes(m)}</option>`).join("")
+    + (meses.length > 1 ? `<option value="todos">Todos os meses</option>` : "");
+  sel.value = meses.includes(escolhido) || (escolhido === "todos" && meses.length > 1) ? escolhido : (meses[meses.length-1] || "");
+  const mes = sel.value;
+  const doMes = m => dados.filter(r => (r.data||"").startsWith(m));
+  const lista = mes === "todos" ? dados : doMes(mes);
+  const mesAnt = mes !== "todos" && meses.indexOf(mes) > 0 ? meses[meses.indexOf(mes)-1] : null;
+  const somar = l => { const m = new Map();
+    for(const r of l){ const c = categoriaDe(r), o = m.get(c) || {n:0, t:0}; o.n++; o.t += total(r); m.set(c, o); }
+    return m; };
+  const atual = somar(lista), ant = mesAnt ? somar(doMes(mesAnt)) : null;
+  const comMeta = mes !== "todos";
+  // categorias com meta aparecem mesmo sem gasto no mês (0% da meta)
+  if(comMeta) for(const c of Object.keys(metas)) if(metas[c] > 0 && CAT[c] && !atual.has(c)) atual.set(c, {n:0, t:0});
+  const geral = [...atual.values()].reduce((s,o) => s + o.t, 0);
+  const ord = [...atual.entries()].sort((a,b) => b[1].t - a[1].t);
+  const maior = ord.length && ord[0][1].t > 0 ? ord[0][1].t : 1;
+  const pctTxt = v => v.toLocaleString("pt-BR", {maximumFractionDigits:1}) + "%";
+  const variacao = c => {
+    if(!ant) return { txt: "—" };
+    const a = ant.get(c) ? ant.get(c).t : 0, t = atual.get(c).t;
+    if(!(a > 0)) return { txt: t > 0 ? "novo" : "—" };
+    const d = (t - a) / a * 100;
+    return { d, txt: `<span class="${d > 0 ? "up" : "down"}">${pct(d)}</span>` };
+  };
+  const celulaMeta = (c, t) => {
+    const m = metas[c];
+    if(!comMeta || !(m > 0)) return `<span class="muted">—</span>`;
+    const p = t / m * 100, cor = corMeta(p);
+    return `<span class="meta"><strong style="color:${cor}">${Math.round(p)}%</strong> de ${brl(m)}
+      <div class="meta-trilho"><div style="width:${Math.min(100, p).toFixed(1)}%;background:${cor}"></div></div></span>`;
+  };
+  $("tabCat").tBodies[0].innerHTML = ord.map(([c,o], i) => { const cat = CAT[c];
+    return `<tr><td>${cat.ic} ${cat.nome}${i === 0 && ord.length > 1 && o.t > 0 ? ' <span class="pill" style="color:var(--up);border-color:var(--up)">🔥 maior gasto</span>' : ""}</td>
+      <td class="num">${o.n}</td><td class="num"><strong>${brl(o.t)}</strong></td>
+      <td class="num">${pctTxt(geral ? o.t/geral*100 : 0)}</td><td class="num">${variacao(c).txt}</td>
+      <td>${celulaMeta(c, o.t)}</td>
+      <td><div class="trilho"><div class="bar" style="width:${(o.t/maior*100).toFixed(1)}%;${i === 0 ? "background:var(--up)" : ""}"></div></div></td></tr>`; }).join("");
+  let html = "";
+  if(comMeta) html += alertasMeta(mes).map(a => `<div class="alerta-meta" style="background:${a.fundo};color:${a.cor}">${a.txt}</div>`).join("");
+  if(ord.length && ord[0][1].t > 0){
+    const [c, o] = ord[0], v = variacao(c), cat = CAT[c];
+    const rot = mes === "todos" ? "todos os meses" : rotuloMes(mes);
+    const comp = v.d !== undefined ? `, ${v.d > 0 ? "subiu" : "caiu"} ${pctTxt(Math.abs(v.d))} em relação a ${rotuloMes(mesAnt)}` : "";
+    html += `<div class="note" style="margin-bottom:10px;font-size:.92rem">🔥 <strong>Onde mais foi dinheiro em ${rot}:</strong>
+      ${cat.ic} <strong>${cat.nome}</strong>, ${brl(o.t)} (${pctTxt(geral ? o.t/geral*100 : 0)} do total)${comp}.</div>`;
+  }
+  $("vila").innerHTML = html;
+  alterna("tabCat", "vazioCat", ord.length);
+}
+
+/* ---------- metas de gasto por categoria (por mês) ---------- */
+const CHAVE_METAS = "acomp_metas";
+let metas = {};
+try{ metas = JSON.parse(localStorage.getItem(CHAVE_METAS)) || {}; }catch(e){}
+const corMeta = p => p >= 100 ? "var(--up)" : p >= 80 ? "#b7791f" : "var(--down)";
+
+function gastoPorCategoria(mes){
+  const m = {};
+  for(const r of dados) if((r.data||"").startsWith(mes)){ const c = categoriaDe(r); m[c] = (m[c]||0) + total(r); }
+  return m;
+}
+// Avisos do mês: passou da meta (vermelho) ou chegou a 80% (amarelo).
+function alertasMeta(mes){
+  const g = gastoPorCategoria(mes), out = [];
+  for(const [c, m] of Object.entries(metas)){
+    if(!(m > 0) || !CAT[c]) continue;
+    const t = g[c] || 0, p = t / m * 100, cat = CAT[c];
+    if(p >= 100) out.push({ p, cor: "var(--up)", fundo: "#fdecea",
+      txt: `⛔ <strong>${cat.ic} ${cat.nome}</strong> passou da meta em <strong>${brl(t - m)}</strong> (${brl(t)} de ${brl(m)}).` });
+    else if(p >= 80) out.push({ p, cor: "var(--warn)", fundo: "var(--warn-bg)",
+      txt: `⚠ <strong>${cat.ic} ${cat.nome}</strong> já usou <strong>${Math.round(p)}%</strong> da meta: faltam ${brl(m - t)} até ${brl(m)}.` });
+  }
+  return out.sort((a,b) => b.p - a.p);
+}
+// Média mensal de cada categoria (meses com compras), para sugerir a meta.
+function mediaMensalCategorias(){
+  const meses = new Set(dados.map(r => (r.data||"").slice(0,7)).filter(Boolean)), soma = {};
+  for(const r of dados){ const c = categoriaDe(r); soma[c] = (soma[c]||0) + total(r); }
+  const n = Math.max(1, meses.size);
+  return Object.fromEntries(Object.entries(soma).map(([c, s]) => [c, s / n]));
+}
+function abrirMetas(){
+  const med = mediaMensalCategorias();
+  $("camposMetas").innerHTML = CATEGORIAS.map(c => `<div><label for="meta_${c.id}">${c.ic} ${c.nome}${med[c.id] ? ` <span class="muted">(média ${brl(med[c.id])})</span>` : ""}</label>
+    <input type="number" id="meta_${c.id}" min="0" step="10" inputmode="decimal" placeholder="sem meta" value="${metas[c.id] > 0 ? metas[c.id] : ""}"></div>`).join("");
+  $("painelMetas").style.display = "";
+  $("painelMetas").scrollIntoView({behavior: "smooth", block: "start"});
+}
+$("btnMetas").addEventListener("click", () => $("painelMetas").style.display === "none" ? abrirMetas() : ($("painelMetas").style.display = "none"));
+$("btnFecharMetas").addEventListener("click", () => { $("painelMetas").style.display = "none"; });
+$("btnSalvarMetas").addEventListener("click", () => {
+  metas = {};
+  for(const c of CATEGORIAS){ const v = Number($("meta_" + c.id).value); if(v > 0) metas[c.id] = v; }
+  try{ localStorage.setItem(CHAVE_METAS, JSON.stringify(metas)); }catch(e){}
+  $("painelMetas").style.display = "none";
+  const ult = [...new Set(dados.map(r => (r.data||"").slice(0,7)))].sort().pop();
+  if(ult) $("mesCat").value = ult;
+  renderCategorias();
+  $("tabCat").closest(".card").scrollIntoView({behavior: "smooth", block: "start"});
+});
 
 // Compara sempre na mesma base: embalagens de tamanhos diferentes do mesmo produto
 // ficam juntas e o preço é mostrado por kg, por litro ou por unidade.
@@ -452,7 +631,7 @@ function renderMercado(){
   for(const [nome,n,soma] of ord){
     const p = geral ? soma/geral*100 : 0;
     linhas.push(`<tr><td>${esc(nome)}</td><td class="num">${n}</td><td class="num">${brl(soma)}</td>
-      <td><div class="bar" style="width:${p.toFixed(1)}%"></div>
+      <td><div class="trilho"><div class="bar" style="width:${p.toFixed(1)}%"></div></div>
       <span class="muted">${p.toLocaleString("pt-BR",{maximumFractionDigits:1})}%</span></td></tr>`);
   }
   corpo.innerHTML = linhas.join("");
@@ -474,7 +653,7 @@ function renderMes(){
     }
     linhas.push(`<tr><td>${rotuloMes(mes)}</td><td class="num">${n}</td><td class="num">${brl(soma)}</td>
       <td class="num">${varia}</td>
-      <td><div class="bar" style="width:${(soma/maior*100).toFixed(1)}%"></div></td></tr>`);
+      <td><div class="trilho"><div class="bar" style="width:${(soma/maior*100).toFixed(1)}%"></div></div></td></tr>`);
   });
   corpo.innerHTML = linhas.join("");
   alterna("tabMes","vazioMes",linhas.length);
@@ -496,6 +675,7 @@ function renderHist(){
     .forEach(({r,i})=>{
       linhas.push(`<tr><td>${dataBR(r.data)}</td>
         <td>${esc(r.produto)} <span class="pill">${esc(r.unidade||"un")}</span></td>
+        <td><select onchange="definirCategoria(dados[${i}].produto, this.value)" style="width:auto;padding:4px 6px;font-size:13px">${opcoesCategoria(categoriaDe(r))}</select></td>
         <td>${esc(r.mercado)}</td>
         <td class="num">${num(r.qtd)}</td>
         <td class="num"><span>${brl(r.preco)}${(() => { const e = embalagemDe(r);
@@ -517,7 +697,7 @@ function alterna(tab,vazio,n){
 
 // Para o modo cartão do celular: cada célula recebe o nome da sua coluna e a
 // coluna principal (produto/mercado/mês) vira o título do cartão.
-const COLUNA_TITULO = { tabMelhor: 0, tabMercado: 0, tabMes: 0, tabHist: 1, tabRevisao: 1 };
+const COLUNA_TITULO = { tabMelhor: 0, tabMercado: 0, tabMes: 0, tabHist: 1, tabRevisao: 1, tabCat: 0 };
 function rotular(tab){
   const nomes = [...tab.tHead.rows[0].cells].map(th => th.textContent.trim());
   tab.classList.add("cartoes");
@@ -555,8 +735,11 @@ $("form").addEventListener("submit", e => {
   if(!r.produto || !r.mercado || !(r.qtd>0) || !(r.preco>=0)){
     alert("Preencha produto, mercado, quantidade e preço."); return;
   }
-  dados.push(r); salvar(); render();
+  dados.push(r);
+  if($("categoria").value) definirCategoria(r.produto, $("categoria").value);   // escolhida à mão: o app aprende
+  else { r.categoria = categoriaDe(r); salvar(); render(); }
   $("produto").value = ""; $("embalagem").value = ""; $("qtd").value = "1"; $("preco").value = "";
+  $("categoria").value = ""; atualizarCategoriaAuto();
   atualizarPrevia(); $("produto").focus();
 });
 
@@ -582,6 +765,15 @@ $("unidade").addEventListener("change", atualizarPrevia);
 $("qtd").addEventListener("input", atualizarPrevia);
 $("preco").addEventListener("input", atualizarPrevia);
 $("busca").addEventListener("input", renderHist);
+$("mesCat").addEventListener("change", renderCategorias);
+
+// cadastro manual: "Automática" mostra a categoria que o app escolheria
+$("categoria").innerHTML = `<option value="">Automática</option>` + opcoesCategoria("");
+function atualizarCategoriaAuto(){
+  const p = $("produto").value.trim(), c = p ? CAT[categoriaDe({produto: p})] : null;
+  $("categoria").options[0].textContent = c ? `Automática (${c.ic} ${c.nome})` : "Automática";
+}
+$("produto").addEventListener("input", atualizarCategoriaAuto);
 
 function remover(i){
   if(!confirm("Remover este registro?")) return;
@@ -600,13 +792,13 @@ function campoCSV(v){
 }
 function exportarCSV(){
   if(!dados.length){ alert("Não há registros para exportar."); return; }
-  const linhas = [["Data","Produto","Unidade","Mercado","Quantidade","PrecoUnitario","Total","Embalagem","PrecoComparavel","Base","Cupom"]
+  const linhas = [["Data","Produto","Unidade","Mercado","Quantidade","PrecoUnitario","Total","Embalagem","PrecoComparavel","Base","Categoria","Cupom"]
     .join(";")];
   for(const r of dados){
     const e = embalagemDe(r);
     linhas.push([r.data,r.produto,r.unidade||"un",r.mercado,r.qtd,
       Number(r.preco).toFixed(2), total(r).toFixed(2), r.embalagem || "",
-      precoBase(r).toFixed(2), e ? e.base : "", r.cupom || ""].map(campoCSV).join(";"));
+      precoBase(r).toFixed(2), e ? e.base : "", CAT[categoriaDe(r)].nome, r.cupom || ""].map(campoCSV).join(";"));
   }
   const blob = new Blob(["﻿"+linhas.join("\r\n")], {type:"text/csv;charset=utf-8"});
   const a = document.createElement("a");
@@ -638,7 +830,9 @@ function lerCSV(texto){
   const idx = n => cab.findIndex(c => c.startsWith(n));
   const iD=idx("data"), iP=idx("produto"), iU=idx("unidade"),
         iM=idx("mercado"), iQ=idx("quant"), iV=idx("precounit") >= 0 ? idx("precounit") : idx("preco"),
-        iE=idx("embal"), iC=idx("cupom");
+        iE=idx("embal"), iC=idx("cupom"), iK=idx("categ");
+  const catPorNome = v => { const t = semAcento(v).toLowerCase().trim();
+    const c = CATEGORIAS.find(c => c.id === t || semAcento(c.nome).toLowerCase() === t); return c ? c.id : null; };
   if(iP<0 || iV<0) throw new Error("faltam as colunas Produto e PrecoUnitario.");
   const saida = [];
   for(let i=1;i<linhas.length;i++){
@@ -656,6 +850,7 @@ function lerCSV(texto){
     };
     if(iE>=0 && c[iE]?.trim()) r.embalagem = c[iE].trim();
     if(iC>=0 && /^\d{44}$/.test((c[iC]||"").trim())) r.cupom = c[iC].trim();
+    if(iK>=0 && catPorNome(c[iK]||"")) r.categoria = catPorNome(c[iK]);
     saida.push(r);
   }
   return saida;
@@ -1267,13 +1462,16 @@ function totalRevisao(it){
 
 function renderRevisao(){
   // embalagem lida no nome do produto (o usuário pode corrigir, ex.: "30 un")
-  for(const it of itensLidos)
+  for(const it of itensLidos){
     if(it.embalagem === undefined){ const e = embalagemDe({...it, embalagem: ""}); it.embalagem = e && !e.aPeso ? textoEmbalagem(e) : ""; }
+    if(!it.categoria) it.categoria = categoriaDe(it);
+  }
   $("tabRevisao").tBodies[0].innerHTML = itensLidos.map((it,i)=>`<tr>
     <td><input type="checkbox" data-i="${i}" class="usar" ${it.ignorar?"":"checked"} style="width:auto"></td>
     <td><input class="ed" data-i="${i}" data-c="produto" value="${esc(it.produto)}"></td>
     <td>${String(it.unidade).toLowerCase() === "kg" ? '<span class="muted">vendido por kg</span>'
          : `<input class="ed" data-i="${i}" data-c="embalagem" value="${esc(it.embalagem)}" placeholder="ex.: 5 kg, 2 L, 30 un">`}</td>
+    <td><select class="ed" data-i="${i}" data-c="categoria">${opcoesCategoria(it.categoria)}</select></td>
     <td><input class="ed" data-i="${i}" data-c="qtd" type="number" step="0.001" min="0.001" value="${it.qtd}"></td>
     <td><input class="ed" data-i="${i}" data-c="preco" type="number" step="0.01" min="0" value="${Number(it.preco).toFixed(2)}"></td>
     <td class="num">${totalRevisao(it)}</td>
@@ -1285,9 +1483,11 @@ function renderRevisao(){
   $("tabRevisao").querySelectorAll(".ed").forEach(inp => {
     inp.addEventListener("input", () => {
       const it = itensLidos[Number(inp.dataset.i)], c = inp.dataset.c;
-      it[c] = c === "produto" || c === "embalagem" ? inp.value : Number(inp.value);
-      inp.closest("tr").cells[5].innerHTML = totalRevisao(it);
-      if(c !== "produto" && c !== "embalagem") conferir();
+      const texto = c === "produto" || c === "embalagem" || c === "categoria";
+      it[c] = texto ? inp.value : Number(inp.value);
+      if(c === "categoria") it.catManual = true;
+      inp.closest("tr").cells[6].innerHTML = totalRevisao(it);
+      if(!texto) conferir();
     });
   });
   $("tabRevisao").querySelectorAll(".usar").forEach(chk => {
@@ -1317,11 +1517,21 @@ $("btnConfirmar").addEventListener("click", () => {
                 unidade: it.unidade || "un", qtd: Number(it.qtd), preco: Number(it.preco) };
     if(chaveCupom) r.cupom = chaveCupom;      // chave de acesso da NFC-e: evita importar o mesmo cupom 2 vezes
     if(it.embalagem && it.embalagem.trim()) r.embalagem = it.embalagem.trim();
+    r.categoria = it.categoria || categoriaDe(r);
+    if(it.catManual) catAprendidas[nomeBase(r.produto)] = r.categoria;   // corrigida na revisão: o app aprende
     dados.push(r);
   }
+  try{ localStorage.setItem(CHAVE_CATEG, JSON.stringify(catAprendidas)); }catch(e){}
   salvar(); render();
   itensLidos = []; chaveCupom = null; descontoTalao = 0; $("revisao").style.display = "none";
   $("estadoOCR").textContent = bons.length + " item(ns) importado(s) para o histórico.";
+  // avisa se esta compra levou alguma categoria a 80% ou mais da meta do mês
+  const avisos = alertasMeta(data.slice(0, 7));
+  if(avisos.length){
+    $("mesCat").value = data.slice(0, 7); renderCategorias();
+    alert("Atenção às metas de " + rotuloMes(data.slice(0, 7)) + ":\n\n" +
+          avisos.map(a => a.txt.replace(/<[^>]+>/g, "")).join("\n"));
+  }
 });
 
 /* =======================================================================
