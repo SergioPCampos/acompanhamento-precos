@@ -237,6 +237,22 @@
       <label for="mesCat" style="margin:0">Mês</label>
       <select id="mesCat" style="width:auto;min-width:150px"></select>
       <button type="button" class="ghost" id="btnMetas">🎯 Definir metas</button>
+      <button type="button" class="ghost" id="btnCats">🗂️ Minhas categorias</button>
+    </div>
+    <div id="painelCats" class="no-print" style="display:none;border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px">
+      <h3 style="font-size:.98rem;margin:0 0 4px">🗂️ Minhas categorias</h3>
+      <p class="muted" style="font-size:.82rem;margin:0 0 10px">Crie categorias além das 11 padrão (ex.: 🐶 Pet, 👶 Bebê, 🍰 Padaria).
+        Em <strong>palavras-chave</strong>, escreva palavras do nome dos produtos, separadas por vírgula
+        (ex.: <em>ração, petisco, areia</em>): o app passa a colocar esses produtos na categoria sozinho.</p>
+      <div id="listaCats"></div>
+      <datalist id="emojis"><option>🐶</option><option>🐱</option><option>👶</option><option>🍰</option><option>🥖</option>
+        <option>🧊</option><option>🍺</option><option>🍷</option><option>💊</option><option>🌸</option><option>🎉</option>
+        <option>🏠</option><option>🧸</option><option>🍫</option><option>🥗</option><option>🎁</option><option>🏷️</option></datalist>
+      <div class="row" style="margin-top:10px">
+        <button type="button" class="ghost" id="btnNovaCat">➕ Nova categoria</button>
+        <button type="button" id="btnSalvarCats">Salvar categorias</button>
+        <button type="button" class="ghost" id="btnFecharCats">Fechar</button>
+      </div>
     </div>
     <div id="painelMetas" class="no-print" style="display:none;border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px">
       <h3 style="font-size:.98rem;margin:0 0 4px">🎯 Meta de gasto por mês</h3>
@@ -409,7 +425,7 @@ function nomeBase(p){
    Classifica cada produto pelo nome (inclui abreviações comuns nos cupons).
    A ordem importa: regras mais específicas antes ("creme dental" é higiene,
    "creme de leite" é laticínio, "água sanitária" é limpeza, "água" é bebida). */
-const CATEGORIAS = [
+const CAT_BASE = [
   ["papeis",    "🧻", "Papéis",              "papel|guardanapo|lenco de papel|toalha de papel|filtro de papel|filtro cafe|papel toalha"],
   ["limpeza",   "🧽", "Limpeza",             "agua sanitaria|sanitaria|alvejante|cloro|detergente|det|sabao|lava roupa|lava roupas|lava loucas?|amaciante|amac|desinfetante|multiuso|multi uso|limpador|limp|lustra moveis|esponja|saco lixo|saco de lixo|sacos? p lixo|vassoura|rodo|pano de chao|pano|flanela|inseticida|repelente|tira manchas|limpa vidros?|cif|veja|pinho sol|omo|ype|desengordurante|odorizador|bom ar|naftalina|palha de aco|bombril|luva"],
   ["higiene",   "🧴", "Higiene",             "sabonete|sab|sabon|shampoo|sh|xampu|condicionador|cond|creme dental|cr dental|cr dent|pasta de dente|escova dental|escova de dente|esc dental|fio dental|enxaguante|antisseptico|desodorante|desod|deo|absorvente|abs|fralda|fraldas|lenco umedecido|aparelho de barbear|aparelho barbear|barbear|lamina|algodao|cotonete|hastes|hidratante|protetor solar|creme corporal|locao|talco|colgate|sorriso|oral b|dove|rexona|nivea|gillette|intimo|cotonetes"],
@@ -422,14 +438,32 @@ const CATEGORIAS = [
   ["cereais",   "🌾", "Cereais e grãos",     "arroz|arr|feijao|feij|fj|lentilha|grao de bico|ervilha seca|aveia|granola|farinha|far|fuba|amido|maizena|macarrao|mac|massa|espaguete|talharim|parafuso|penne|lasanha|cereal|sucrilhos|corn flakes|quinoa|trigo|flocos|floc|tapioca|polvilho|cuscuz|canjica|chia|linhaca|semolina"],
   ["outros",    "📦", "Outros",              ""],
 ].map(([id, ic, nome, pal]) => ({ id, ic, nome, rx: pal ? new RegExp("(^| )(" + pal + ")( |$)") : null }));
-const CAT = Object.fromEntries(CATEGORIAS.map(c => [c.id, c]));
+
+// Categorias criadas pelo usuário: {id, ic, nome, palavras}. Entram antes de "Outros"
+// e, se tiverem palavras-chave, têm prioridade na classificação automática.
+const CHAVE_CAT_EXTRA = "acomp_cat_extra";
+let catExtras = [];
+try{ catExtras = JSON.parse(localStorage.getItem(CHAVE_CAT_EXTRA)) || []; }catch(e){}
+let CATEGORIAS = [], CAT = {};
+function palavrasRx(txt){
+  const ps = String(txt || "").split(/[,;\n]/)
+    .map(p => semAcento(p).toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim()).filter(Boolean);
+  return ps.length ? new RegExp("(^| )(" + ps.map(p => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")( |$)") : null;
+}
+function montarCategorias(){
+  const extras = catExtras.map(e => ({ id: e.id, ic: e.ic || "🏷️", nome: e.nome, extra: true, rx: palavrasRx(e.palavras) }));
+  CATEGORIAS = [...CAT_BASE.filter(c => c.id !== "outros"), ...extras, CAT_BASE.find(c => c.id === "outros")];
+  CAT = Object.fromEntries(CATEGORIAS.map(c => [c.id, c]));
+}
+montarCategorias();
 const CHAVE_CATEG = "acomp_categorias";       // correções do usuário: nome do produto → categoria
 let catAprendidas = {};
 try{ catAprendidas = JSON.parse(localStorage.getItem(CHAVE_CATEG)) || {}; }catch(e){}
 
 function categoriaAuto(produto){
   const t = " " + semAcento(produto).toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim() + " ";
-  for(const c of CATEGORIAS) if(c.rx && c.rx.test(t)) return c.id;
+  for(const c of CATEGORIAS) if(c.extra && c.rx && c.rx.test(t)) return c.id;   // as suas primeiro
+  for(const c of CAT_BASE) if(c.rx && c.rx.test(t)) return c.id;
   return "outros";
 }
 function categoriaDe(r){
@@ -579,6 +613,72 @@ function abrirMetas(){
 }
 $("btnMetas").addEventListener("click", () => $("painelMetas").style.display === "none" ? abrirMetas() : ($("painelMetas").style.display = "none"));
 $("btnFecharMetas").addEventListener("click", () => { $("painelMetas").style.display = "none"; });
+
+/* ---------- categorias criadas pelo usuário ---------- */
+function linhaCat(e){
+  return `<div class="linhaCat" data-id="${esc(e.id || "")}" style="display:grid;grid-template-columns:64px 1fr;gap:6px 8px;
+      padding:10px 0;border-bottom:1px solid var(--line)">
+    <input class="cIc" list="emojis" maxlength="8" value="${esc(e.ic || "🏷️")}" style="text-align:center;font-size:20px;padding:6px" aria-label="Emoji">
+    <input class="cNome" value="${esc(e.nome || "")}" placeholder="Nome da categoria (ex.: Pet)" aria-label="Nome">
+    <span></span>
+    <input class="cPal" value="${esc(e.palavras || "")}" placeholder="palavras-chave, separadas por vírgula" aria-label="Palavras-chave">
+    <span></span>
+    <div><button type="button" class="danger cApagar" style="padding:5px 10px;font-size:13px">Apagar categoria</button></div>
+  </div>`;
+}
+function abrirCats(){
+  $("listaCats").innerHTML = catExtras.length ? catExtras.map(linhaCat).join("")
+    : `<p class="muted" id="semCats" style="margin:0">Você ainda não criou nenhuma categoria.</p>`;
+  $("painelCats").style.display = "";
+  $("painelCats").scrollIntoView({behavior: "smooth", block: "start"});
+}
+function salvarExtras(){
+  try{ localStorage.setItem(CHAVE_CAT_EXTRA, JSON.stringify(catExtras)); }catch(e){}
+  montarCategorias(); preencherSelectCategoria();
+}
+$("btnCats").addEventListener("click", () => $("painelCats").style.display === "none" ? abrirCats() : ($("painelCats").style.display = "none"));
+$("btnFecharCats").addEventListener("click", () => { $("painelCats").style.display = "none"; });
+$("btnNovaCat").addEventListener("click", () => {
+  const s = $("semCats"); if(s) s.remove();
+  $("listaCats").insertAdjacentHTML("beforeend", linhaCat({}));
+  $("listaCats").lastElementChild.querySelector(".cNome").focus();
+});
+$("listaCats").addEventListener("click", ev => {
+  const b = ev.target.closest(".cApagar"); if(!b) return;
+  const linha = b.closest(".linhaCat"), id = linha.dataset.id;
+  if(!id){ linha.remove(); return; }                       // ainda não salva
+  const cat = CAT[id], n = dados.filter(r => categoriaDe(r) === id).length;
+  if(!confirm(`Apagar a categoria "${cat ? cat.nome : ""}"?` + (n ? `\n\nAs ${n} compra(s) dela voltam para a classificação automática.` : ""))) return;
+  catExtras = catExtras.filter(e => e.id !== id);
+  for(const r of dados) if(r.categoria === id) delete r.categoria;
+  for(const k of Object.keys(catAprendidas)) if(catAprendidas[k] === id) delete catAprendidas[k];
+  delete metas[id];
+  try{ localStorage.setItem(CHAVE_CATEG, JSON.stringify(catAprendidas)); localStorage.setItem(CHAVE_METAS, JSON.stringify(metas)); }catch(e){}
+  salvarExtras(); salvar(); render(); abrirCats();
+});
+$("btnSalvarCats").addEventListener("click", () => {
+  const nomesBase = new Set(CAT_BASE.map(c => semAcento(c.nome).toLowerCase())), vistos = new Set(), novas = [];
+  for(const l of $("listaCats").querySelectorAll(".linhaCat")){
+    const nome = l.querySelector(".cNome").value.trim();
+    if(!nome) continue;
+    const k = semAcento(nome).toLowerCase();
+    if(nomesBase.has(k) || vistos.has(k)){ alert(`Já existe uma categoria chamada "${nome}".`); return; }
+    vistos.add(k);
+    novas.push({ id: l.dataset.id || "u" + Date.now().toString(36) + novas.length,
+                 ic: l.querySelector(".cIc").value.trim() || "🏷️", nome, palavras: l.querySelector(".cPal").value.trim() });
+  }
+  catExtras = novas; salvarExtras();
+  // produtos que batem com as palavras-chave novas mudam de categoria (menos os que você já corrigiu à mão)
+  let movidos = 0;
+  for(const r of dados){
+    if(catAprendidas[nomeBase(r.produto)]) continue;
+    const a = categoriaAuto(r.produto);
+    if(CAT[a] && CAT[a].extra && r.categoria !== a){ r.categoria = a; movidos++; }
+  }
+  salvar(); render(); abrirCats();
+  $("estadoOCR").textContent = "";
+  if(movidos) alert(movidos + " compra(s) foram para as suas categorias pelas palavras-chave.");
+});
 $("btnSalvarMetas").addEventListener("click", () => {
   metas = {};
   for(const c of CATEGORIAS){ const v = Number($("meta_" + c.id).value); if(v > 0) metas[c.id] = v; }
@@ -768,7 +868,12 @@ $("busca").addEventListener("input", renderHist);
 $("mesCat").addEventListener("change", renderCategorias);
 
 // cadastro manual: "Automática" mostra a categoria que o app escolheria
-$("categoria").innerHTML = `<option value="">Automática</option>` + opcoesCategoria("");
+function preencherSelectCategoria(){
+  const atual = $("categoria").value;
+  $("categoria").innerHTML = `<option value="">Automática</option>` + opcoesCategoria("");
+  $("categoria").value = CAT[atual] ? atual : "";
+}
+preencherSelectCategoria();
 function atualizarCategoriaAuto(){
   const p = $("produto").value.trim(), c = p ? CAT[categoriaDe({produto: p})] : null;
   $("categoria").options[0].textContent = c ? `Automática (${c.ic} ${c.nome})` : "Automática";
@@ -850,7 +955,14 @@ function lerCSV(texto){
     };
     if(iE>=0 && c[iE]?.trim()) r.embalagem = c[iE].trim();
     if(iC>=0 && /^\d{44}$/.test((c[iC]||"").trim())) r.cupom = c[iC].trim();
-    if(iK>=0 && catPorNome(c[iK]||"")) r.categoria = catPorNome(c[iK]);
+    if(iK>=0 && (c[iK]||"").trim()){
+      // categoria que não existe neste aparelho (criada noutro): cria com o mesmo nome
+      if(!catPorNome(c[iK])){
+        catExtras.push({ id: "u" + Date.now().toString(36) + catExtras.length, ic: "🏷️", nome: c[iK].trim(), palavras: "" });
+        salvarExtras();
+      }
+      r.categoria = catPorNome(c[iK]);
+    }
     saida.push(r);
   }
   return saida;
